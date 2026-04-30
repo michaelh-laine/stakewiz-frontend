@@ -13,12 +13,10 @@ import { MultiStakeDialog } from './stake/multi-stake';
 import { ValidatorContext } from './validator/validatorhook'
 import ordinal from 'ordinal'
 import WizEmblem from '../public/images/emblem.svg'
-import { RedesignShowcase } from './redesign';
 
 const API_URL = process.env.API_BASE_URL;
 
 class ValidatorListing extends React.Component<ValidatorListingI, {}> {
-    concept: 'institutional' | 'operator' | 'analyst' = 'institutional';
     constructor(props, context ) {
       super(props);
 
@@ -161,27 +159,33 @@ class ValidatorListing extends React.Component<ValidatorListingI, {}> {
       else {
         return (
             [
-              <RedesignShowcase
-                  key='redesign-showcase'
-                  concept={this.concept}
-                  setConcept={(concept) => { this.concept = concept; this.forceUpdate(); }}
-                  clusterStats={this.props.state.clusterStats}
-                  validators={this.props.state.validators}
-              />,
-              <SearchBar 
-                  validators={this.props.state.validators}
-                  setFilter={(filteredValidators:[validatorI]) => {
-                      return this.doFilter(filteredValidators);
-                  }}
-                  walletValidators={this.props.state.walletValidators}
-                  stakeValidators={this.props.state.stakeValidators}
-                  showMultiStakeModal={this.props.state.showMultiStakeModal}
-                  updateMultiStakeModal={(show: boolean) => this.updateMultiStakeModalVisibility(show)}
-                  showListView={ this.props.state.showListView }
-                  updateListView={(show: boolean) => this.updateShowListView(show)}
-                  key='searchBar'
-                  />,
-              <ValidatorList 
+              <div className='sol-layout-shell' key='sol-shell'>
+                <div className='sol-page-hero'>
+                    <div className='sol-hero-title'>SOL Strategies Validator Intelligence</div>
+                    <div className='sol-hero-subtitle'>Evaluate validator quality, concentration, performance, and yield with operator-grade filters.</div>
+                    <div className='sol-hero-metrics'>
+                        <div className='sol-hero-metric'><small>Avg APY</small><span>{this.props.state.clusterStats.avg_apy.toFixed(2)}%</span></div>
+                        <div className='sol-hero-metric'><small>Avg Skip Rate</small><span>{this.props.state.clusterStats.avg_skip_rate.toFixed(2)}%</span></div>
+                        <div className='sol-hero-metric'><small>Avg Commission</small><span>{this.props.state.clusterStats.avg_commission.toFixed(2)}%</span></div>
+                        <div className='sol-hero-metric'><small>Filtered Set</small><span>{this.props.state.filteredValidators.length}</span></div>
+                    </div>
+                </div>
+                <div className='sol-main-grid'>
+                    <aside className='sol-filter-column'>
+                        <SearchBar 
+                            validators={this.props.state.validators}
+                            setFilter={(filteredValidators:[validatorI]) => this.doFilter(filteredValidators)}
+                            walletValidators={this.props.state.walletValidators}
+                            stakeValidators={this.props.state.stakeValidators}
+                            showMultiStakeModal={this.props.state.showMultiStakeModal}
+                            updateMultiStakeModal={(show: boolean) => this.updateMultiStakeModalVisibility(show)}
+                            showListView={ this.props.state.showListView }
+                            updateListView={(show: boolean) => this.updateShowListView(show)}
+                            key='searchBar'
+                        />
+                    </aside>
+                    <section className='sol-results-column'>
+                        <ValidatorList 
                   validators={this.props.state.filteredValidators}
                   clusterStats={this.props.state.clusterStats}
                   listSize={this.props.state.visibleCount}
@@ -203,7 +207,10 @@ class ValidatorListing extends React.Component<ValidatorListingI, {}> {
                   stakeValidators={this.props.state.stakeValidators}
                   laine={this.props.state.laine}
                   showListView={this.props.state.showListView}
-                  />,
+                        />
+                    </section>
+                </div>
+              </div>,
               <LoadMoreButton
                   key='loadMoreButton'
                   viewDelta={this.props.state.filteredValidators.length - this.props.state.visibleCount}
