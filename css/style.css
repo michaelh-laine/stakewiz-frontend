@@ -1173,6 +1173,17 @@ a:hover {
   border-radius: 12px;
   padding: 0.6rem;
   row-gap: 0.35rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-start;
+}
+.sol-filter-grid .searchToggle,
+.sol-filter-grid .searchSort {
+  background: #111d34;
+  border: 1px solid #2e4270;
+  border-radius: 8px;
+  padding: 0.3rem 0.45rem;
 }
 .sol-layout-shell {
   display: flex;

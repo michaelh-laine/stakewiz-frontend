@@ -26,8 +26,13 @@ class SearchBar extends React.Component<
             onlyJito: boolean;
             hideDelinquent: boolean;
             minUptime: string;
+            minCommission: string;
             maxCommission: string;
             minApy: string;
+            minStake: string;
+            maxStake: string;
+            minScore: string;
+            maxScore: string;
         }
     > {
     constructor(props) {
@@ -43,8 +48,13 @@ class SearchBar extends React.Component<
             onlyJito: false,
             hideDelinquent: false,
             minUptime: '',
+            minCommission: '',
             maxCommission: '',
             minApy: '',
+            minStake: '',
+            maxStake: '',
+            minScore: '',
+            maxScore: '',
         };
     }
 
@@ -72,7 +82,7 @@ class SearchBar extends React.Component<
             obj[key] = value;
             return obj;
             },() => {
-                const {textInput, hideAnonymous, onlyMine, hideHighStake, onlyJito, hideDelinquent, minUptime, maxCommission, minApy } = this.state;
+                const {textInput, hideAnonymous, onlyMine, hideHighStake, onlyJito, hideDelinquent, minUptime, minCommission, maxCommission, minApy, minStake, maxStake, minScore, maxScore } = this.state;
                 const list = this.props.validators;
                 let filteredValidators: validatorI[] = [];
 
@@ -100,8 +110,13 @@ class SearchBar extends React.Component<
                             if(!is_jito && this.state.onlyJito) continue;
                             if(hideDelinquent && list[i].delinquent) continue;
                             if(minUptime !== '' && list[i].uptime < Number(minUptime)) continue;
+                            if(minCommission !== '' && list[i].commission < Number(minCommission)) continue;
                             if(maxCommission !== '' && list[i].commission > Number(maxCommission)) continue;
                             if(minApy !== '' && list[i].total_apy < Number(minApy)) continue;
+                            if(minStake !== '' && list[i].activated_stake < Number(minStake)) continue;
+                            if(maxStake !== '' && list[i].activated_stake > Number(maxStake)) continue;
+                            if(minScore !== '' && list[i].wiz_score < Number(minScore)) continue;
+                            if(maxScore !== '' && list[i].wiz_score > Number(maxScore)) continue;
                             filteredValidators.push(list[i]);
                             
                             counter ++;
@@ -194,12 +209,32 @@ class SearchBar extends React.Component<
                         <input className='form-control form-control-sm' style={{maxWidth:'5rem'}} name='minUptime' type='number' min='0' max='100' placeholder='%' value={this.state.minUptime} onChange={event => this.doSearch(event.target.name,event.target.value)} />
                     </div>
                     <div className='d-flex align-items-center searchToggle'>
+                        <label className='pe-1 text-nowrap'>Min comm</label>
+                        <input className='form-control form-control-sm' style={{maxWidth:'5rem'}} name='minCommission' type='number' min='0' max='100' placeholder='%' value={this.state.minCommission} onChange={event => this.doSearch(event.target.name,event.target.value)} />
+                    </div>
+                    <div className='d-flex align-items-center searchToggle'>
                         <label className='pe-1 text-nowrap'>Max comm</label>
                         <input className='form-control form-control-sm' style={{maxWidth:'5rem'}} name='maxCommission' type='number' min='0' max='100' placeholder='%' value={this.state.maxCommission} onChange={event => this.doSearch(event.target.name,event.target.value)} />
                     </div>
                     <div className='d-flex align-items-center searchToggle'>
                         <label className='pe-1 text-nowrap'>Min APY</label>
                         <input className='form-control form-control-sm' style={{maxWidth:'5rem'}} name='minApy' type='number' min='0' max='100' placeholder='%' value={this.state.minApy} onChange={event => this.doSearch(event.target.name,event.target.value)} />
+                    </div>
+                    <div className='d-flex align-items-center searchToggle'>
+                        <label className='pe-1 text-nowrap'>Min stake</label>
+                        <input className='form-control form-control-sm' style={{maxWidth:'7rem'}} name='minStake' type='number' min='0' placeholder='◎' value={this.state.minStake} onChange={event => this.doSearch(event.target.name,event.target.value)} />
+                    </div>
+                    <div className='d-flex align-items-center searchToggle'>
+                        <label className='pe-1 text-nowrap'>Max stake</label>
+                        <input className='form-control form-control-sm' style={{maxWidth:'7rem'}} name='maxStake' type='number' min='0' placeholder='◎' value={this.state.maxStake} onChange={event => this.doSearch(event.target.name,event.target.value)} />
+                    </div>
+                    <div className='d-flex align-items-center searchToggle'>
+                        <label className='pe-1 text-nowrap'>Min score</label>
+                        <input className='form-control form-control-sm' style={{maxWidth:'5rem'}} name='minScore' type='number' min='0' max='100' placeholder='%' value={this.state.minScore} onChange={event => this.doSearch(event.target.name,event.target.value)} />
+                    </div>
+                    <div className='d-flex align-items-center searchToggle'>
+                        <label className='pe-1 text-nowrap'>Max score</label>
+                        <input className='form-control form-control-sm' style={{maxWidth:'5rem'}} name='maxScore' type='number' min='0' max='100' placeholder='%' value={this.state.maxScore} onChange={event => this.doSearch(event.target.name,event.target.value)} />
                     </div>
                     <div className="d-flex align-items-center text-left form-check form-switch searchSort">
                         <label className="text-nowrap pe-1" htmlFor="sortField">Sort by</label>
@@ -227,7 +262,7 @@ class SearchBar extends React.Component<
                             {this.state.validatorCount} validators
                         </div>
                         <button className="btn btn-sm btn-outline-info ms-2" onClick={() => {
-                            this.setState({textInput:'',hideAnonymous:false,onlyMine:false,hideHighStake:false,onlyJito:false,hideDelinquent:false,minUptime:'',maxCommission:'',minApy:''},() => this.doSearch('textInput',''))
+                            this.setState({textInput:'',hideAnonymous:false,onlyMine:false,hideHighStake:false,onlyJito:false,hideDelinquent:false,minUptime:'',minCommission:'',maxCommission:'',minApy:'',minStake:'',maxStake:'',minScore:'',maxScore:''},() => this.doSearch('textInput',''))
                         }}>Reset filters</button>
                         <OverlayTrigger
                             placement='top'    
