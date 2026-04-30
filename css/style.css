@@ -1158,3 +1158,19 @@ a:hover {
   letter-spacing: 0.08em;
   font-size: 0.72rem;
 }
+.sol-nav-shell {
+  background: linear-gradient(180deg, rgba(10,14,24,.95), rgba(10,14,24,.6));
+  border-bottom: 1px solid #243357;
+  backdrop-filter: blur(8px);
+}
+.sol-footer-shell {
+  border-top: 1px solid #243357;
+  background: linear-gradient(180deg, #0d1324, #070b16) !important;
+}
+.sol-filter-grid {
+  background: #0f1628;
+  border: 1px solid #243357;
+  border-radius: 12px;
+  padding: 0.6rem;
+  row-gap: 0.35rem;
+}

@@ -27,6 +27,7 @@ class SearchBar extends React.Component<
             hideDelinquent: boolean;
             minUptime: string;
             maxCommission: string;
+            minApy: string;
         }
     > {
     constructor(props) {
@@ -43,6 +44,7 @@ class SearchBar extends React.Component<
             hideDelinquent: false,
             minUptime: '',
             maxCommission: '',
+            minApy: '',
         };
     }
 
@@ -70,7 +72,7 @@ class SearchBar extends React.Component<
             obj[key] = value;
             return obj;
             },() => {
-                const {textInput, hideAnonymous, onlyMine, hideHighStake, onlyJito, hideDelinquent, minUptime, maxCommission } = this.state;
+                const {textInput, hideAnonymous, onlyMine, hideHighStake, onlyJito, hideDelinquent, minUptime, maxCommission, minApy } = this.state;
                 const list = this.props.validators;
                 let filteredValidators: validatorI[] = [];
 
@@ -99,6 +101,7 @@ class SearchBar extends React.Component<
                             if(hideDelinquent && list[i].delinquent) continue;
                             if(minUptime !== '' && list[i].uptime < Number(minUptime)) continue;
                             if(maxCommission !== '' && list[i].commission > Number(maxCommission)) continue;
+                            if(minApy !== '' && list[i].total_apy < Number(minApy)) continue;
                             filteredValidators.push(list[i]);
                             
                             counter ++;
@@ -159,7 +162,7 @@ class SearchBar extends React.Component<
                     </button>
                 </div>
             
-                <div className="d-flex flex-row validator-search-filter-row">
+                <div className="d-flex flex-row validator-search-filter-row sol-filter-grid">
                     
                     <div className="d-flex align-items-center text-left form-check form-switch searchToggle">
                         <input className="form-check-input p-2 vcheckbox mx-1" type="checkbox" name="hideAnonymous" id="vhideanonymous" role="switch" onChange={event => this.doSearch(event.target.name,event.target.checked)} checked={this.state.hideAnonymous} />
@@ -194,6 +197,10 @@ class SearchBar extends React.Component<
                         <label className='pe-1 text-nowrap'>Max comm</label>
                         <input className='form-control form-control-sm' style={{maxWidth:'5rem'}} name='maxCommission' type='number' min='0' max='100' placeholder='%' value={this.state.maxCommission} onChange={event => this.doSearch(event.target.name,event.target.value)} />
                     </div>
+                    <div className='d-flex align-items-center searchToggle'>
+                        <label className='pe-1 text-nowrap'>Min APY</label>
+                        <input className='form-control form-control-sm' style={{maxWidth:'5rem'}} name='minApy' type='number' min='0' max='100' placeholder='%' value={this.state.minApy} onChange={event => this.doSearch(event.target.name,event.target.value)} />
+                    </div>
                     <div className="d-flex align-items-center text-left form-check form-switch searchSort">
                         <label className="text-nowrap pe-1" htmlFor="sortField">Sort by</label>
                         <select className='form-select form-select-sm' name='sortField' onChange={event => this.doSearch(event.target.name,event.target.value)} value={this.state.sortField} >
@@ -219,6 +226,9 @@ class SearchBar extends React.Component<
                         <div className="d-flex align-items-center bg-dark text-white p-1 px-2 ms-2 mt-0 rounded justify-content-center" id="resultsno">
                             {this.state.validatorCount} validators
                         </div>
+                        <button className="btn btn-sm btn-outline-info ms-2" onClick={() => {
+                            this.setState({textInput:'',hideAnonymous:false,onlyMine:false,hideHighStake:false,onlyJito:false,hideDelinquent:false,minUptime:'',maxCommission:'',minApy:''},() => this.doSearch('textInput',''))
+                        }}>Reset filters</button>
                         <OverlayTrigger
                             placement='top'    
                             overlay={<Tooltip>{this.props.showListView?'Card':'List'} view</Tooltip>}
