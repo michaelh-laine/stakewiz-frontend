@@ -24,6 +24,9 @@ class SearchBar extends React.Component<
             validatorCount: number;
             sortField: string;
             onlyJito: boolean;
+            hideDelinquent: boolean;
+            minUptime: string;
+            maxCommission: string;
         }
     > {
     constructor(props) {
@@ -37,6 +40,9 @@ class SearchBar extends React.Component<
             validatorCount: this.props.validators.length,
             sortField: 'rank_asc',
             onlyJito: false,
+            hideDelinquent: false,
+            minUptime: '',
+            maxCommission: '',
         };
     }
 
@@ -64,7 +70,7 @@ class SearchBar extends React.Component<
             obj[key] = value;
             return obj;
             },() => {
-                const {textInput, hideAnonymous, onlyMine, hideHighStake, onlyJito } = this.state;
+                const {textInput, hideAnonymous, onlyMine, hideHighStake, onlyJito, hideDelinquent, minUptime, maxCommission } = this.state;
                 const list = this.props.validators;
                 let filteredValidators: validatorI[] = [];
 
@@ -90,6 +96,9 @@ class SearchBar extends React.Component<
                                 if(!this.props.walletValidators.includes(vote_identity)) continue;
                             }
                             if(!is_jito && this.state.onlyJito) continue;
+                            if(hideDelinquent && list[i].delinquent) continue;
+                            if(minUptime !== '' && list[i].uptime < Number(minUptime)) continue;
+                            if(maxCommission !== '' && list[i].commission > Number(maxCommission)) continue;
                             filteredValidators.push(list[i]);
                             
                             counter ++;
@@ -172,6 +181,18 @@ class SearchBar extends React.Component<
                     <div className="d-flex align-items-center text-left form-check form-switch searchToggle">
                         <input className="form-check-input p-2 vcheckbox mx-1" type="checkbox" name="onlyJito" id="vonlyjito" role="switch" onChange={event => this.doSearch(event.target.name,event.target.checked)} checked={this.state.onlyJito} />
                         <label htmlFor="vhidestake">Only Jito</label>
+                    </div>
+                    <div className="d-flex align-items-center text-left form-check form-switch searchToggle">
+                        <input className="form-check-input p-2 vcheckbox mx-1" type="checkbox" name="hideDelinquent" id="vhidedelinquent" role="switch" onChange={event => this.doSearch(event.target.name,event.target.checked)} checked={this.state.hideDelinquent} />
+                        <label htmlFor="vhidedelinquent">Hide delinquent</label>
+                    </div>
+                    <div className='d-flex align-items-center searchToggle'>
+                        <label className='pe-1 text-nowrap'>Min uptime</label>
+                        <input className='form-control form-control-sm' style={{maxWidth:'5rem'}} name='minUptime' type='number' min='0' max='100' placeholder='%' value={this.state.minUptime} onChange={event => this.doSearch(event.target.name,event.target.value)} />
+                    </div>
+                    <div className='d-flex align-items-center searchToggle'>
+                        <label className='pe-1 text-nowrap'>Max comm</label>
+                        <input className='form-control form-control-sm' style={{maxWidth:'5rem'}} name='maxCommission' type='number' min='0' max='100' placeholder='%' value={this.state.maxCommission} onChange={event => this.doSearch(event.target.name,event.target.value)} />
                     </div>
                     <div className="d-flex align-items-center text-left form-check form-switch searchSort">
                         <label className="text-nowrap pe-1" htmlFor="sortField">Sort by</label>

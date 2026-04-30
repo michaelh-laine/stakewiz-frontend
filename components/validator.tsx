@@ -13,10 +13,12 @@ import { MultiStakeDialog } from './stake/multi-stake';
 import { ValidatorContext } from './validator/validatorhook'
 import ordinal from 'ordinal'
 import WizEmblem from '../public/images/emblem.svg'
+import { RedesignShowcase } from './redesign';
 
 const API_URL = process.env.API_BASE_URL;
 
 class ValidatorListing extends React.Component<ValidatorListingI, {}> {
+    concept: 'institutional' | 'operator' | 'analyst' = 'institutional';
     constructor(props, context ) {
       super(props);
 
@@ -159,6 +161,13 @@ class ValidatorListing extends React.Component<ValidatorListingI, {}> {
       else {
         return (
             [
+              <RedesignShowcase
+                  key='redesign-showcase'
+                  concept={this.concept}
+                  setConcept={(concept) => { this.concept = concept; this.forceUpdate(); }}
+                  clusterStats={this.props.state.clusterStats}
+                  validators={this.props.state.validators}
+              />,
               <SearchBar 
                   validators={this.props.state.validators}
                   setFilter={(filteredValidators:[validatorI]) => {

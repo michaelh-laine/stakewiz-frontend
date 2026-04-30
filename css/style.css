@@ -1108,3 +1108,32 @@ a:hover {
   .vlist-view .w-70{width: initial;}
   .vlist-view .validator-flex-logo.w-25{width: 50% !important;}
 }
+.sol-shell {
+  background: linear-gradient(145deg, #111827, #0b1020);
+  border: 1px solid #2a3656;
+  border-radius: 14px;
+  padding: 1rem;
+}
+.sol-heading {
+  font-family: josefin;
+  letter-spacing: 0.03em;
+}
+.sol-card {
+  background: #131c31;
+  border: 1px solid #314266;
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+.sol-kpi {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #9ec5ff;
+}
+.sol-pill {
+  background: #202d4a;
+  border: 1px solid #3f5489;
+  border-radius: 999px;
+  color: #d5e5ff;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+}
