@@ -535,8 +535,14 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                             
                         
                     </div>
+                    <div className='row g-2 m-1 sol-metric-strip'>
+                        <div className='col-md-3 col-6'><div className='sol-metric-card'><small>Wiz Score</small><div>{this.state.validator.wiz_score}%</div></div></div>
+                        <div className='col-md-3 col-6'><div className='sol-metric-card'><small>TrueAPY</small><div>{this.state.validator.total_apy}%</div></div></div>
+                        <div className='col-md-3 col-6'><div className='sol-metric-card'><small>30d Uptime</small><div>{this.state.validator.uptime}%</div></div></div>
+                        <div className='col-md-3 col-6'><div className='sol-metric-card'><small>Commission</small><div>{this.state.validator.commission}%</div></div></div>
+                    </div>
 
-
+                    <div className='validator-section-label mt-2 ms-2'>Performance & Reliability</div>
                     <div className='d-flex mb-1 flex-grow-1 flex-wrap validator-detail-flex-container'>
                         <div className='flex-grow-1 m-1 validator-detail-flex-card delinquency-flex-card'>
                             <div className='validator-detail-flex-opacity-bg'></div>
@@ -566,6 +572,9 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    <div className='validator-section-label mt-2 ms-2'>Economics & Governance</div>
+                    <div className='d-flex mb-1 flex-grow-1 flex-wrap validator-detail-flex-container'>
                         <div className='flex-grow-1 m-1 validator-detail-flex-card'>
                             <div className='validator-detail-flex-opacity-bg'></div>
                             <div className='card text-light'>
