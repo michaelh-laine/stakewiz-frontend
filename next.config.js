@@ -6,6 +6,9 @@ const nextConfig = {
 module.exports = nextConfig
 
 module.exports = {
+  experimental: {
+    scrollRestoration: true
+  },
   env: {
     API_BASE_URL: process.env.API_BASE_URL,
     GA_TRACKING_ID: process.env.GA_TRACKING_ID,

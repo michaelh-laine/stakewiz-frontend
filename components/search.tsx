@@ -1,220 +1,286 @@
-import React from 'react';
-import { validatorI } from './validator/interfaces';
+import React, { FC, useEffect, useMemo, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { validatorI } from './validator/interfaces';
+import config from '../config.json';
 
-interface searchI {
-    validators: [validatorI];
-    setFilter: Function;
-    walletValidators: [string];
-    stakeValidators: [validatorI];
+interface SearchProps {
+    validators: validatorI[];
+    setFilter: (filtered: validatorI[]) => void;
+    walletValidators: string[] | null;
+    stakeValidators: validatorI[] | null;
     showMultiStakeModal: boolean;
-    updateMultiStakeModal: Function;
+    updateMultiStakeModal: (show: boolean) => void;
     showListView: boolean;
-    updateListView: Function;
+    updateListView: (show: boolean) => void;
+    preset?: 'returns' | 'reliability' | 'decentralize' | 'mev' | 'lowfees' | null;
 }
 
-class SearchBar extends React.Component<
-        searchI, 
-        {
-            textInput:string;
-            hideAnonymous:boolean;
-            onlyMine:boolean;
-            hideHighStake:boolean;
-            showListView:boolean;
-            validatorCount: number;
-            sortField: string;
-            onlyJito: boolean;
-        }
-    > {
-    constructor(props) {
-        super(props);
-        this.state = {
-            textInput: '',
-            hideAnonymous: false,
-            onlyMine: false,
-            hideHighStake: false,
-            showListView: this.props.showListView,
-            validatorCount: this.props.validators.length,
-            sortField: 'rank_asc',
-            onlyJito: false,
-        };
-    }
+type SortKey =
+    | 'rank' | 'rank_asc'
+    | 'activated_stake' | 'activated_stake_asc'
+    | 'total_apy' | 'total_apy_asc'
+    | 'commission' | 'commission_asc'
+    | 'skip_rate' | 'skip_rate_asc'
+    | 'credit_ratio' | 'credit_ratio_asc'
+    | 'uptime' | 'uptime_asc'
+    | 'first_epoch_with_stake' | 'first_epoch_with_stake_asc'
+    | 'asncity_concentration' | 'asncity_concentration_asc';
 
-    renderStakeSelection() {
-        let selectCount = 0;
-        if(this.props.stakeValidators!=null) {
-            selectCount = this.props.stakeValidators.length;
-        }
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+    { value: 'rank_asc', label: 'Wiz Score (best first)' },
+    { value: 'rank', label: 'Wiz Score (worst first)' },
+    { value: 'total_apy', label: 'TrueAPY (high → low)' },
+    { value: 'total_apy_asc', label: 'TrueAPY (low → high)' },
+    { value: 'commission_asc', label: 'Commission (low → high)' },
+    { value: 'commission', label: 'Commission (high → low)' },
+    { value: 'activated_stake_asc', label: 'Stake (low → high)' },
+    { value: 'activated_stake', label: 'Stake (high → low)' },
+    { value: 'skip_rate_asc', label: 'Skip rate (low → high)' },
+    { value: 'uptime', label: '30d uptime (high → low)' },
+    { value: 'first_epoch_with_stake', label: 'Epochs active (new → old)' },
+    { value: 'first_epoch_with_stake_asc', label: 'Epochs active (old → new)' },
+    { value: 'asncity_concentration_asc', label: 'ASN+City concentration (low → high)' }
+];
 
-        return (
-            <div className='d-flex mx-2 justify-content-center'>
-                <button className='btn btn-sm btn-outline-light' onClick={() => this.props.updateMultiStakeModal(true)} disabled={(selectCount==0) ? true : false}>
-                    {(selectCount==0) ? <i className='bi bi-minecart me-2'></i> : <i className='bi bi-minecart-loaded me-2'></i> }
+interface FilterState {
+    text: string;
+    hideAnonymous: boolean;
+    onlyMine: boolean;
+    hideHighStake: boolean;
+    onlyJito: boolean;
+    hideDelinquent: boolean;
+    minWizScore: number;
+    minApy: number;
+    maxCommission: number;
+    maxSkipRate: number;
+    sortField: SortKey;
+}
+
+const DEFAULT_FILTERS: FilterState = {
+    text: '', hideAnonymous: false, onlyMine: false, hideHighStake: false, onlyJito: false,
+    hideDelinquent: true, minWizScore: 0, minApy: 0, maxCommission: 100, maxSkipRate: 100, sortField: 'rank_asc'
+};
+
+const QUICK_FILTERS: { id: string; label: string; icon: string; apply: (f: FilterState) => FilterState; isActive: (f: FilterState) => boolean }[] = [
+    { id: 'top-picks', label: 'Top picks', icon: 'bi-stars',
+      apply: f => ({ ...f, minWizScore: 90, hideDelinquent: true, hideHighStake: true, hideAnonymous: true }),
+      isActive: f => f.minWizScore >= 90 && f.hideHighStake && f.hideAnonymous },
+    { id: 'high-apy', label: 'High APY', icon: 'bi-graph-up-arrow',
+      apply: f => ({ ...f, minApy: 7, sortField: 'total_apy', maxCommission: 10 }),
+      isActive: f => f.minApy >= 7 && f.maxCommission <= 10 },
+    { id: 'low-commission', label: 'Low commission', icon: 'bi-cash-coin',
+      apply: f => ({ ...f, maxCommission: 5, sortField: 'commission_asc' }),
+      isActive: f => f.maxCommission <= 5 },
+    { id: 'jito', label: 'Jito MEV', icon: 'bi-lightning-charge-fill',
+      apply: f => ({ ...f, onlyJito: !f.onlyJito }),
+      isActive: f => f.onlyJito },
+    { id: 'decentralize', label: 'Decentralize', icon: 'bi-diagram-3-fill',
+      apply: f => ({ ...f, hideHighStake: true, minWizScore: 80, sortField: 'activated_stake_asc' }),
+      isActive: f => f.hideHighStake && f.minWizScore >= 80 },
+    { id: 'reliable', label: 'Most reliable', icon: 'bi-shield-check',
+      apply: f => ({ ...f, maxSkipRate: 5, sortField: 'uptime', hideDelinquent: true }),
+      isActive: f => f.maxSkipRate <= 5 }
+];
+
+const PRESET_FILTERS: Record<NonNullable<SearchProps['preset']>, Partial<FilterState>> = {
+    returns: { minWizScore: 70, maxCommission: 10, minApy: 6, sortField: 'total_apy', hideDelinquent: true, hideAnonymous: true },
+    reliability: { maxSkipRate: 5, hideDelinquent: true, sortField: 'uptime', hideAnonymous: true },
+    decentralize: { minWizScore: 80, hideHighStake: true, maxCommission: 10, sortField: 'activated_stake_asc', hideDelinquent: true, hideAnonymous: true },
+    mev: { onlyJito: true, maxCommission: 10, sortField: 'total_apy', hideDelinquent: true, hideAnonymous: true },
+    lowfees: { maxCommission: 5, minWizScore: 80, sortField: 'commission_asc', hideDelinquent: true, hideAnonymous: true }
+};
+
+const RangeRow: FC<{ label: string; value: number; min: number; max: number; step: number; unit: string; onChange: (v: number) => void }> = ({ label, value, min, max, step, unit, onChange }) => (
+    <div className="sw-slider-row">
+        <div className="sw-slider-label"><span>{label}</span><strong>{value}{unit}</strong></div>
+        <input type="range" className="form-range sw-range" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))} />
+    </div>
+);
+
+const SearchBar: FC<SearchProps> = ({ validators, setFilter, walletValidators, stakeValidators, updateMultiStakeModal, showListView, updateListView, preset }) => {
+    const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+    const [advancedOpen, setAdvancedOpen] = useState<boolean>(false);
+
+    const lastPresetRef = useRef<typeof preset>(undefined);
+    useEffect(() => {
+        if (preset !== lastPresetRef.current) {
+            lastPresetRef.current = preset;
+            setFilters(prev => preset
+                ? { ...DEFAULT_FILTERS, text: prev.text, ...PRESET_FILTERS[preset] }
+                : { ...DEFAULT_FILTERS, text: prev.text }
+            );
+        }
+    }, [preset]);
+
+    const filtered = useMemo(() => {
+        if (!validators) return [];
+        const q = filters.text.trim().toUpperCase();
+        const result = validators.filter(v => {
+            if (q.length > 0) {
+                const haystack = (v.name + v.identity + v.vote_identity).toUpperCase();
+                if (haystack.indexOf(q) === -1) return false;
+            }
+            if (filters.hideAnonymous && (!v.name || v.name === '')) return false;
+            if (filters.hideDelinquent && v.delinquent) return false;
+            if (filters.hideHighStake && v.stake_ratio >= config.STAKE_CATEGORIES.HIGH) return false;
+            if (filters.onlyJito && !v.is_jito) return false;
+            if (filters.onlyMine && walletValidators && !walletValidators.includes(v.vote_identity)) return false;
+            if (v.wiz_score < filters.minWizScore) return false;
+            if (v.total_apy < filters.minApy) return false;
+            if (v.commission > filters.maxCommission) return false;
+            if (v.skip_rate > filters.maxSkipRate) return false;
+            return true;
+        });
+        const sf = filters.sortField;
+        if (sf.endsWith('_asc')) {
+            const key = sf.substring(0, sf.length - 4) as keyof validatorI;
+            result.sort((a, b) => (a[key] as number) > (b[key] as number) ? 1 : (a[key] as number) < (b[key] as number) ? -1 : 0);
+        } else {
+            const key = sf as keyof validatorI;
+            result.sort((a, b) => (a[key] as number) < (b[key] as number) ? 1 : (a[key] as number) > (b[key] as number) ? -1 : 0);
+        }
+        return result;
+    }, [validators, filters, walletValidators]);
+
+    const setFilterRef = useRef(setFilter);
+    setFilterRef.current = setFilter;
+    useEffect(() => { setFilterRef.current(filtered); }, [filtered]);
+
+    const update = (patch: Partial<FilterState>) => setFilters(f => ({ ...f, ...patch }));
+
+    const onlyMineDisabled = !walletValidators || walletValidators.length < 1;
+    const onlyMineTooltip = !walletValidators
+        ? 'Connect your wallet to filter for validators you have stakes with.'
+        : walletValidators.length < 1
+            ? "You don't have any stakes on this wallet."
+            : 'Only show validators with which you have stakes.';
+
+    const selectCount = stakeValidators ? stakeValidators.length : 0;
+
+    const hasActiveFilters = filters.hideAnonymous || filters.onlyMine || filters.hideHighStake || filters.onlyJito
+        || filters.hideDelinquent !== DEFAULT_FILTERS.hideDelinquent
+        || filters.minWizScore > 0 || filters.minApy > 0
+        || filters.maxCommission < 100 || filters.maxSkipRate < 100;
+
+    const clearAll = () => setFilters({ ...DEFAULT_FILTERS, text: filters.text });
+
+    const activePills: { key: string; label: string; clear: () => void }[] = [];
+    if (filters.hideAnonymous) activePills.push({ key: 'anon', label: 'Hide unnamed', clear: () => update({ hideAnonymous: false }) });
+    if (filters.onlyMine) activePills.push({ key: 'mine', label: 'Only my stakes', clear: () => update({ onlyMine: false }) });
+    if (filters.hideHighStake) activePills.push({ key: 'hs', label: 'Hide high-stake', clear: () => update({ hideHighStake: false }) });
+    if (filters.onlyJito) activePills.push({ key: 'jito', label: 'Only Jito MEV', clear: () => update({ onlyJito: false }) });
+    if (!filters.hideDelinquent) activePills.push({ key: 'del', label: 'Showing delinquent', clear: () => update({ hideDelinquent: true }) });
+    if (filters.minWizScore > 0) activePills.push({ key: 'wiz', label: 'Wiz ≥ ' + filters.minWizScore + '%', clear: () => update({ minWizScore: 0 }) });
+    if (filters.minApy > 0) activePills.push({ key: 'apy', label: 'APY ≥ ' + filters.minApy + '%', clear: () => update({ minApy: 0 }) });
+    if (filters.maxCommission < 100) activePills.push({ key: 'comm', label: 'Commission ≤ ' + filters.maxCommission + '%', clear: () => update({ maxCommission: 100 }) });
+    if (filters.maxSkipRate < 100) activePills.push({ key: 'skip', label: 'Skip ≤ ' + filters.maxSkipRate + '%', clear: () => update({ maxSkipRate: 100 }) });
+
+    return (
+        <div className="sw-search-shell" id="vlist-search">
+            <div className="sw-search-row">
+                <div className="sw-search-input">
+                    <i className="bi bi-search sw-search-icon" />
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Search by name, identity or vote account…"
+                        value={filters.text}
+                        autoComplete="off"
+                        onChange={e => update({ text: e.target.value })}
+                        onKeyDown={e => { if (e.code === 'Escape') update({ text: '' }); }}
+                    />
+                    {filters.text ? (
+                        <button type="button" className="sw-search-clear" onClick={() => update({ text: '' })} aria-label="Clear search">
+                            <i className="bi bi-x-lg" />
+                        </button>
+                    ) : null}
+                </div>
+                <div className="sw-search-meta">
+                    <div className="sw-result-count">
+                        <strong>{filtered.length}</strong><span>validators</span>
+                    </div>
+                    <OverlayTrigger placement="top" overlay={<Tooltip>{showListView ? 'Card view' : 'List view'}</Tooltip>}>
+                        <button type="button" className="sw-icon-btn" onClick={() => updateListView(!showListView)}>
+                            <i className={'bi ' + (showListView ? 'bi-grid-3x3-gap' : 'bi-list-ul')} />
+                        </button>
+                    </OverlayTrigger>
+                    <OverlayTrigger placement="top" overlay={<Tooltip>{advancedOpen ? 'Hide advanced filters' : 'Show advanced filters'}</Tooltip>}>
+                        <button type="button" className={'sw-icon-btn' + (advancedOpen ? ' sw-icon-btn-active' : '')} onClick={() => setAdvancedOpen(o => !o)}>
+                            <i className="bi bi-sliders" />
+                        </button>
+                    </OverlayTrigger>
+                </div>
+            </div>
+
+            <div className="sw-chip-row">
+                {QUICK_FILTERS.map(qf => {
+                    const active = qf.isActive(filters);
+                    return (
+                        <button key={qf.id} type="button" className={'sw-chip' + (active ? ' sw-chip-active' : '')} onClick={() => setFilters(prev => qf.apply(prev))}>
+                            <i className={'bi ' + qf.icon + ' me-1'} /> {qf.label}
+                        </button>
+                    );
+                })}
+                <span className="sw-chip-divider" aria-hidden="true" />
+                <label className={'sw-chip sw-chip-toggle' + (filters.hideAnonymous ? ' sw-chip-active' : '')}>
+                    <input type="checkbox" checked={filters.hideAnonymous} onChange={e => update({ hideAnonymous: e.target.checked })} />
+                    <i className="bi bi-incognito me-1" /> Hide unnamed
+                </label>
+                <OverlayTrigger placement="top" overlay={<Tooltip>{onlyMineTooltip}</Tooltip>}>
+                    <label className={'sw-chip sw-chip-toggle' + (filters.onlyMine ? ' sw-chip-active' : '') + (onlyMineDisabled ? ' sw-chip-disabled' : '')}>
+                        <input type="checkbox" checked={filters.onlyMine} disabled={onlyMineDisabled} onChange={e => update({ onlyMine: e.target.checked })} />
+                        <i className="bi bi-wallet2 me-1" /> Only mine
+                    </label>
+                </OverlayTrigger>
+                <label className={'sw-chip sw-chip-toggle' + (filters.hideHighStake ? ' sw-chip-active' : '')}>
+                    <input type="checkbox" checked={filters.hideHighStake} onChange={e => update({ hideHighStake: e.target.checked })} />
+                    <i className="bi bi-funnel me-1" /> Hide high-stake
+                </label>
+                <div className="sw-chip-spacer" />
+                <div className="sw-sort">
+                    <label className="sw-sort-label" htmlFor="sw-sort-select">Sort</label>
+                    <select id="sw-sort-select" className="form-select form-select-sm sw-sort-select" value={filters.sortField} onChange={e => update({ sortField: e.target.value as SortKey })}>
+                        {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                </div>
+                <button type="button" className="sw-chip sw-chip-stake" onClick={() => updateMultiStakeModal(true)} disabled={selectCount === 0}>
+                    <i className={'bi ' + (selectCount === 0 ? 'bi-minecart' : 'bi-minecart-loaded') + ' me-1'} />
                     {selectCount} selected
                 </button>
             </div>
-        )
-    }
 
+            {advancedOpen ? (
+                <div className="sw-advanced">
+                    <div className="sw-slider-grid">
+                        <RangeRow label="Minimum Wiz Score" value={filters.minWizScore} min={0} max={100} step={1} unit="%" onChange={v => update({ minWizScore: v })} />
+                        <RangeRow label="Minimum APY" value={filters.minApy} min={0} max={12} step={0.1} unit="%" onChange={v => update({ minApy: v })} />
+                        <RangeRow label="Maximum commission" value={filters.maxCommission} min={0} max={100} step={1} unit="%" onChange={v => update({ maxCommission: v })} />
+                        <RangeRow label="Maximum skip rate" value={filters.maxSkipRate} min={0} max={100} step={0.5} unit="%" onChange={v => update({ maxSkipRate: v })} />
+                    </div>
+                    <div className="sw-advanced-extras">
+                        <label className="form-check form-switch">
+                            <input type="checkbox" className="form-check-input" checked={!filters.hideDelinquent} onChange={e => update({ hideDelinquent: !e.target.checked })} />
+                            <span className="ms-2">Show delinquent validators</span>
+                        </label>
+                    </div>
+                </div>
+            ) : null}
 
-    doSearch(key,value) {
-        
-        this.setState(() => {
-            let obj = {};
-            obj[key] = value;
-            return obj;
-            },() => {
-                const {textInput, hideAnonymous, onlyMine, hideHighStake, onlyJito } = this.state;
-                const list = this.props.validators;
-                let filteredValidators: validatorI[] = [];
-
-
-                var counter = 0;
-                // Loop through all list items, and hide those who don't match the search query
-            
-                for (let i = 0; i < list.length; i++) {
-            
-                    let stakeRatio = list[i].stake_ratio*1000;
-                    let name = list[i].name;
-                    let is_jito = list[i].is_jito;
-                    let txtValue = list[i].name + list[i].identity + list[i].vote_identity;
-                    let vote_identity = list[i].vote_identity;
-                    
-                    if (txtValue.toUpperCase().indexOf(textInput.toUpperCase()) > -1 ) {
-                        
-                        if((name=='' && hideAnonymous===true) || (hideHighStake && stakeRatio>=100)) {
-                            continue;
-                        }
-                        else {
-                            if(onlyMine && this.props.walletValidators!=null) {
-                                if(!this.props.walletValidators.includes(vote_identity)) continue;
-                            }
-                            if(!is_jito && this.state.onlyJito) continue;
-                            filteredValidators.push(list[i]);
-                            
-                            counter ++;
-                        }
-                        
-                    }
-                
-                }
-
-                let sf = this.state.sortField;
-                
-                if(!sf.includes('_asc')) {
-                    filteredValidators.sort((a,b) => (a[sf] < b[sf]) ? 1 : ((b[sf] < a[sf]) ? -1 : 0));
-                }
-                else {
-                    sf = sf.substring(0,sf.length-4);
-                    filteredValidators.sort((a,b) => (a[sf] > b[sf]) ? 1 : ((b[sf] > a[sf]) ? -1 : 0));
-                }
-
-                this.setState({
-                    validatorCount: filteredValidators.length
-                });
-                this.props.setFilter(filteredValidators);
-            });
-    }
-
-    keyPressed(event) {
-        if(event.code=='Escape' || event.code=='Delete') {
-            this.clearInput(event.target.name);
-        }
-    }
-
-    clearInput(key) {
-        this.doSearch(key,'');
-    }
-
-    render() {
-        let onlyMineDisabled = (this.props.walletValidators==null || this.props.walletValidators.length<1) ? true : false;
-        
-        if(this.props.walletValidators==null) {
-            var onlyMineTooltip = 'Connect your wallet to filter for validators you have stakes with.';
-        }
-        else if(this.props.walletValidators.length<1) {
-            var onlyMineTooltip = "You don't have any stakes on this wallet.";
-        }
-        else {
-            var onlyMineTooltip = "Only show validators with which you have stakes.";
-        }
-
-
-        return (
-            <div className="d-flex flex-column align-items-center gap-2">
-                
-                <div className="position-relative d-flex align-items-center w-100">
-                    <input className="p-2 form-control" type="text" id="vsearch" name='textInput' value={this.state.textInput} placeholder="Search validators..." autoComplete="off" onChange={event => this.doSearch(event.target.name,event.target.value)} onKeyDown={event => this.keyPressed(event)} />
-                    <button className="btn btn-sm btn-outline-dark" id="clear-input" onClick={(event) => this.clearInput(((event.target as HTMLButtonElement).previousSibling as HTMLInputElement).name)}>
-                        Clear
+            {(activePills.length > 0 || hasActiveFilters) ? (
+                <div className="sw-active-filters">
+                    <span className="sw-active-label">Active filters:</span>
+                    {activePills.map(p => (
+                        <button key={p.key} type="button" className="sw-active-pill" onClick={p.clear}>
+                            {p.label}<i className="bi bi-x ms-1" />
+                        </button>
+                    ))}
+                    <button type="button" className="sw-active-clear" onClick={clearAll}>
+                        <i className="bi bi-arrow-counterclockwise me-1" /> Clear all
                     </button>
                 </div>
-            
-                <div className="d-flex flex-row validator-search-filter-row">
-                    
-                    <div className="d-flex align-items-center text-left form-check form-switch searchToggle">
-                        <input className="form-check-input p-2 vcheckbox mx-1" type="checkbox" name="hideAnonymous" id="vhideanonymous" role="switch" onChange={event => this.doSearch(event.target.name,event.target.checked)} checked={this.state.hideAnonymous} />
-                        <label htmlFor="vhideanonymous">Hide unnamed</label>
-                    </div>
-                    <OverlayTrigger
-                            placement='top'    
-                            overlay={<Tooltip>{onlyMineTooltip}</Tooltip>}
-                        >
-                        <div className="d-flex align-items-center text-left form-check form-switch searchToggle">
-                            <input className="form-check-input p-2 vcheckbox mx-1" type="checkbox" name="onlyMine" id="vhideprivate" role="switch" onChange={event => this.doSearch(event.target.name,event.target.checked)} checked={this.state.onlyMine} disabled={onlyMineDisabled} />
-                            <label htmlFor="vonlymine">Only Mine</label>
-                        </div>
-                    </OverlayTrigger>
-                    <div className="d-flex align-items-center text-left form-check form-switch searchToggle">
-                        <input className="form-check-input p-2 vcheckbox mx-1" type="checkbox" name="hideHighStake" id="vhidehstake" role="switch" onChange={event => this.doSearch(event.target.name,event.target.checked)} checked={this.state.hideHighStake} />
-                        <label htmlFor="vhidestake">Hide high-stake</label>
-                    </div>
-                    <div className="d-flex align-items-center text-left form-check form-switch searchToggle">
-                        <input className="form-check-input p-2 vcheckbox mx-1" type="checkbox" name="onlyJito" id="vonlyjito" role="switch" onChange={event => this.doSearch(event.target.name,event.target.checked)} checked={this.state.onlyJito} />
-                        <label htmlFor="vhidestake">Only Jito</label>
-                    </div>
-                    <div className="d-flex align-items-center text-left form-check form-switch searchSort">
-                        <label className="text-nowrap pe-1" htmlFor="sortField">Sort by</label>
-                        <select className='form-select form-select-sm' name='sortField' onChange={event => this.doSearch(event.target.name,event.target.value)} value={this.state.sortField} >
-                            <option value='rank'>Wiz Score ↑</option>
-                            <option value='rank_asc'>Wiz Score ↓</option>
-                            <option value='activated_stake_asc'>Stake ↑</option>
-                            <option value='activated_stake'>Stake ↓</option>
-                            <option value='total_apy'>TrueAPY ↓</option>
-                            <option value='skip_rate_asc'>Slot skip rate ↑</option>
-                            <option value='epoch_credits_asc'>Vote Credits ↑</option>
-                            <option value='epoch_credits'>Vote Credits ↓</option>
-                            <option value='commission_asc'>Commission ↑</option>
-                            <option value='commission'>Commission ↓</option>
-                            <option value='uptime_asc'>30 day uptime ↑</option>
-                            <option value='uptime'>30 day uptime ↓</option>
-                            <option value='first_epoch_with_stake'>Epochs active ↑</option>
-                            <option value='first_epoch_with_stake_asc'>Epochs active ↓</option>
-                            <option value='asncity_concentration_asc'>ASN+City Concentration ↑</option>
-                            <option value='asncity_concentration'>ASN+City Concentration ↓</option>
-                        </select>
-                    </div>
-                    <div className='d-flex flex-row justify-content-center'>
-                        <div className="d-flex align-items-center bg-dark text-white p-1 px-2 ms-2 mt-0 rounded justify-content-center" id="resultsno">
-                            {this.state.validatorCount} validators
-                        </div>
-                        <OverlayTrigger
-                            placement='top'    
-                            overlay={<Tooltip>{this.props.showListView?'Card':'List'} view</Tooltip>}
-                        >
-                            <div className="d-flex align-items-center show-list-view ps-2 mobile-col-hide">
-                                <label htmlFor="showlistview" className="btn btn-sm btn-outline-light" onClick={() => this.props.updateListView(this.props.showListView ? false : true)}>
-                                    {this.props.showListView ? <i className="bi bi-filter-square"></i> : <i className="bi bi-list"></i>}
-                                </label>
-                            </div>
-                        </OverlayTrigger>
-                        {this.renderStakeSelection()}
-                    </div>
-                </div>
-                
-            </div>
-        );
-    }
-}
+            ) : null}
+        </div>
+    );
+};
 
 export default SearchBar;

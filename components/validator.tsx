@@ -11,6 +11,7 @@ import { StakeLabel, RenderUrl, RenderImage, RenderName } from './validator/comm
 import { validatorI, ValidatorBoxPropsI, ValidatorListI, ValidatorListingI } from './validator/interfaces'
 import { MultiStakeDialog } from './stake/multi-stake';
 import { ValidatorContext } from './validator/validatorhook'
+import HomeShell from './home/HomeShell'
 import ordinal from 'ordinal'
 import WizEmblem from '../public/images/emblem.svg'
 
@@ -158,49 +159,55 @@ class ValidatorListing extends React.Component<ValidatorListingI, {}> {
       }
       else {
         return (
-            [
-              <SearchBar 
-                  validators={this.props.state.validators}
-                  setFilter={(filteredValidators:[validatorI]) => {
-                      return this.doFilter(filteredValidators);
-                  }}
-                  walletValidators={this.props.state.walletValidators}
-                  stakeValidators={this.props.state.stakeValidators}
-                  showMultiStakeModal={this.props.state.showMultiStakeModal}
-                  updateMultiStakeModal={(show: boolean) => this.updateMultiStakeModalVisibility(show)}
-                  showListView={ this.props.state.showListView }
-                  updateListView={(show: boolean) => this.updateShowListView(show)}
-                  key='searchBar'
-                  />,
-              <ValidatorList 
-                  validators={this.props.state.filteredValidators}
-                  clusterStats={this.props.state.clusterStats}
-                  listSize={this.props.state.visibleCount}
-                  key='validatorlist'
-                  showWizModal={this.props.state.showWizModal}
-                  updateWizModal={(show:boolean,validator:validatorI) => this.updateWizModalVisibility(show,validator)}
-                  wizValidator={this.props.state.wizValidator}
-                  showAlertModal={this.props.state.showAlertModal}
-                  updateAlertModal={(show:boolean,validator:validatorI) => this.updateAlertModalVisibility(show,validator)}
-                  showMultiStakeModal={this.props.state.showMultiStakeModal}
-                  updateMultiStakeModal={(show:boolean) => this.updateMultiStakeModalVisibility(show)}
-                  alertValidator={this.props.state.alertValidator}
-                  userPubkey={this.props.userPubkey}
-                  solflareEnabled={this.props.state.solflareNotificationsEnabled}
-                  connection={this.props.connection}
-                  connected={this.props.connected}
-                  updateStakeValidators={(validator: validatorI) => this.updateStakeValidators(validator)}
-                  clearStakeValidators={() => this.clearStakeValidators()}
-                  stakeValidators={this.props.state.stakeValidators}
-                  laine={this.props.state.laine}
-                  showListView={this.props.state.showListView}
-                  />,
-              <LoadMoreButton
-                  key='loadMoreButton'
-                  viewDelta={this.props.state.filteredValidators.length - this.props.state.visibleCount}
-                  onClick={() => this.bumpVisibleCount()}
-                  />
-            ]
+            <HomeShell
+                validators={this.props.state.validators}
+                clusterStats={this.props.state.clusterStats}
+            >
+                {({preset}) => [
+                    <SearchBar
+                        validators={this.props.state.validators}
+                        setFilter={(filteredValidators:[validatorI]) => {
+                            return this.doFilter(filteredValidators);
+                        }}
+                        walletValidators={this.props.state.walletValidators}
+                        stakeValidators={this.props.state.stakeValidators}
+                        showMultiStakeModal={this.props.state.showMultiStakeModal}
+                        updateMultiStakeModal={(show: boolean) => this.updateMultiStakeModalVisibility(show)}
+                        showListView={this.props.state.showListView}
+                        updateListView={(show: boolean) => this.updateShowListView(show)}
+                        preset={preset}
+                        key='searchBar'
+                    />,
+                    <ValidatorList
+                        validators={this.props.state.filteredValidators}
+                        clusterStats={this.props.state.clusterStats}
+                        listSize={this.props.state.visibleCount}
+                        key='validatorlist'
+                        showWizModal={this.props.state.showWizModal}
+                        updateWizModal={(show:boolean,validator:validatorI) => this.updateWizModalVisibility(show,validator)}
+                        wizValidator={this.props.state.wizValidator}
+                        showAlertModal={this.props.state.showAlertModal}
+                        updateAlertModal={(show:boolean,validator:validatorI) => this.updateAlertModalVisibility(show,validator)}
+                        showMultiStakeModal={this.props.state.showMultiStakeModal}
+                        updateMultiStakeModal={(show:boolean) => this.updateMultiStakeModalVisibility(show)}
+                        alertValidator={this.props.state.alertValidator}
+                        userPubkey={this.props.userPubkey}
+                        solflareEnabled={this.props.state.solflareNotificationsEnabled}
+                        connection={this.props.connection}
+                        connected={this.props.connected}
+                        updateStakeValidators={(validator: validatorI) => this.updateStakeValidators(validator)}
+                        clearStakeValidators={() => this.clearStakeValidators()}
+                        stakeValidators={this.props.state.stakeValidators}
+                        laine={this.props.state.laine}
+                        showListView={this.props.state.showListView}
+                    />,
+                    <LoadMoreButton
+                        key='loadMoreButton'
+                        viewDelta={this.props.state.filteredValidators.length - this.props.state.visibleCount}
+                        onClick={() => this.bumpVisibleCount()}
+                    />
+                ]}
+            </HomeShell>
         );
       }
     }

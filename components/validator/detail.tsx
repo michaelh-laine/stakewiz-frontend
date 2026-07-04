@@ -17,6 +17,8 @@ import { CommissionHistoryI, JitoCommissionHistoryI } from '../stake/interfaces'
 import * as browser from '../../lib/browser';
 import { VoteSuccessChart } from './vote_success';
 import { SkipRateChart } from './skip_rate';
+import ProfileHeader from './ProfileHeader';
+import ProfileNav from './ProfileNav';
 
 const API_URL = process.env.API_BASE_URL;
 
@@ -281,7 +283,18 @@ class ValidatorDetail extends React.Component<validatorDetailI,
             let activated_stake = new Intl.NumberFormat().format(Number(this.state.validator.activated_stake.toFixed(0)));
 
             return ( [
-                <div className='container-sm m-1 position-relative d-flex align-items-center validator-detail-header' key='validator-details-header'>
+                <div className='sw-profile-wrap' key='validator-details-redesigned-wrap'>
+                <ProfileHeader
+                    key='profileHeader'
+                    validator={this.state.validator}
+                    connected={this.props.connected}
+                    onStake={() => this.setState({showStakeModal:true})}
+                    onAlert={scrollToAlertForm}
+                />
+                <ProfileNav key='profileNav' />
+                <div id='overview' className='sw-anchor' />
+                </div>,
+                <div className='container-sm m-1 position-relative d-flex align-items-center validator-detail-header sw-legacy-hidden' key='validator-details-header'>
                     
                    
                     <div className='d-flex flex-grow-1 flex-column validator-delinquency-container'>
@@ -537,6 +550,7 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                     </div>
 
 
+                    <div id='performance' className='sw-anchor' />
                     <div className='d-flex mb-1 flex-grow-1 flex-wrap validator-detail-flex-container'>
                         <div className='flex-grow-1 m-1 validator-detail-flex-card delinquency-flex-card'>
                             <div className='validator-detail-flex-opacity-bg'></div>
@@ -566,6 +580,7 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                                 </div>
                             </div>
                         </div>
+                        <div id='stake' className='sw-anchor' />
                         <div className='flex-grow-1 m-1 validator-detail-flex-card'>
                             <div className='validator-detail-flex-opacity-bg'></div>
                             <div className='card text-light'>
@@ -642,6 +657,7 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                                 </div>
                             </div>
                         </div>
+                        <div id='score' className='sw-anchor' />
                         <div className='flex-grow-1 m-1 validator-detail-flex-card'>
                             <div className='validator-detail-flex-opacity-bg'></div>
                             <div className='card text-light'>
@@ -655,6 +671,7 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                                 </div>
                             </div>
                         </div>
+                        <div id='commissions' className='sw-anchor' />
                         <div className='flex-grow-1 m-1 validator-detail-flex-card'>
                             <div className='validator-detail-flex-opacity-bg'></div>
                             <div className='card text-light'>
@@ -675,6 +692,7 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                             </div>
                         </div>
                     </div>
+                    <div id='alerts' className='sw-anchor' />
                     <div className='row'>
                         <div ref={alertFormRef as React.RefObject<HTMLDivElement>} className='col p-2 text-white border border-white rounded'>
                             <AlertForm
