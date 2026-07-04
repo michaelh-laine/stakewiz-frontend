@@ -61,25 +61,48 @@ const DEFAULT_FILTERS: FilterState = {
     hideDelinquent: true, minWizScore: 0, minApy: 0, maxCommission: 100, maxSkipRate: 100, sortField: 'rank_asc'
 };
 
-const QUICK_FILTERS: { id: string; label: string; icon: string; apply: (f: FilterState) => FilterState; isActive: (f: FilterState) => boolean }[] = [
+interface QuickFilter {
+    id: string;
+    label: string;
+    icon: string;
+    hint: string;
+    apply: (f: FilterState) => FilterState;
+    isActive: (f: FilterState) => boolean;
+    /** Keys of FilterState this preset directly controls (used to hide duplicated pills). */
+    ownsKeys: (keyof FilterState)[];
+}
+
+const QUICK_FILTERS: QuickFilter[] = [
     { id: 'top-picks', label: 'Top picks', icon: 'bi-stars',
+      hint: 'Top-scoring validators — 90%+ Wiz, hides high-stake and unnamed',
       apply: f => ({ ...f, minWizScore: 90, hideDelinquent: true, hideHighStake: true, hideAnonymous: true }),
-      isActive: f => f.minWizScore >= 90 && f.hideHighStake && f.hideAnonymous },
+      isActive: f => f.minWizScore >= 90 && f.hideHighStake && f.hideAnonymous,
+      ownsKeys: ['minWizScore', 'hideHighStake', 'hideAnonymous', 'hideDelinquent'] },
     { id: 'high-apy', label: 'High APY', icon: 'bi-graph-up-arrow',
+      hint: 'APY ≥ 7% and commission ≤ 10%, sorted by yield',
       apply: f => ({ ...f, minApy: 7, sortField: 'total_apy', maxCommission: 10 }),
-      isActive: f => f.minApy >= 7 && f.maxCommission <= 10 },
+      isActive: f => f.minApy >= 7 && f.maxCommission <= 10,
+      ownsKeys: ['minApy', 'maxCommission'] },
     { id: 'low-commission', label: 'Low commission', icon: 'bi-cash-coin',
+      hint: 'Commission ≤ 5%, sorted low → high',
       apply: f => ({ ...f, maxCommission: 5, sortField: 'commission_asc' }),
-      isActive: f => f.maxCommission <= 5 },
+      isActive: f => f.maxCommission <= 5 && f.minApy === 0,
+      ownsKeys: ['maxCommission'] },
     { id: 'jito', label: 'Jito MEV', icon: 'bi-lightning-charge-fill',
+      hint: 'Only Jito-enabled validators (extra MEV rewards)',
       apply: f => ({ ...f, onlyJito: !f.onlyJito }),
-      isActive: f => f.onlyJito },
+      isActive: f => f.onlyJito,
+      ownsKeys: ['onlyJito'] },
     { id: 'decentralize', label: 'Decentralize', icon: 'bi-diagram-3-fill',
+      hint: 'Trusted (Wiz ≥ 80%) validators with smaller stake — bigger impact',
       apply: f => ({ ...f, hideHighStake: true, minWizScore: 80, sortField: 'activated_stake_asc' }),
-      isActive: f => f.hideHighStake && f.minWizScore >= 80 },
+      isActive: f => f.hideHighStake && f.minWizScore >= 80 && f.minWizScore < 90,
+      ownsKeys: ['minWizScore', 'hideHighStake'] },
     { id: 'reliable', label: 'Most reliable', icon: 'bi-shield-check',
+      hint: 'Skip rate ≤ 5% and no delinquents, sorted by uptime',
       apply: f => ({ ...f, maxSkipRate: 5, sortField: 'uptime', hideDelinquent: true }),
-      isActive: f => f.maxSkipRate <= 5 }
+      isActive: f => f.maxSkipRate <= 5 && f.hideDelinquent,
+      ownsKeys: ['maxSkipRate', 'hideDelinquent'] }
 ];
 
 const PRESET_FILTERS: Record<NonNullable<SearchProps['preset']>, Partial<FilterState>> = {
@@ -164,16 +187,27 @@ const SearchBar: FC<SearchProps> = ({ validators, setFilter, walletValidators, s
 
     const clearAll = () => setFilters({ ...DEFAULT_FILTERS, text: filters.text });
 
-    const activePills: { key: string; label: string; clear: () => void }[] = [];
-    if (filters.hideAnonymous) activePills.push({ key: 'anon', label: 'Hide unnamed', clear: () => update({ hideAnonymous: false }) });
-    if (filters.onlyMine) activePills.push({ key: 'mine', label: 'Only my stakes', clear: () => update({ onlyMine: false }) });
-    if (filters.hideHighStake) activePills.push({ key: 'hs', label: 'Hide high-stake', clear: () => update({ hideHighStake: false }) });
-    if (filters.onlyJito) activePills.push({ key: 'jito', label: 'Only Jito MEV', clear: () => update({ onlyJito: false }) });
-    if (!filters.hideDelinquent) activePills.push({ key: 'del', label: 'Showing delinquent', clear: () => update({ hideDelinquent: true }) });
-    if (filters.minWizScore > 0) activePills.push({ key: 'wiz', label: 'Wiz ≥ ' + filters.minWizScore + '%', clear: () => update({ minWizScore: 0 }) });
-    if (filters.minApy > 0) activePills.push({ key: 'apy', label: 'APY ≥ ' + filters.minApy + '%', clear: () => update({ minApy: 0 }) });
-    if (filters.maxCommission < 100) activePills.push({ key: 'comm', label: 'Commission ≤ ' + filters.maxCommission + '%', clear: () => update({ maxCommission: 100 }) });
-    if (filters.maxSkipRate < 100) activePills.push({ key: 'skip', label: 'Skip ≤ ' + filters.maxSkipRate + '%', clear: () => update({ maxSkipRate: 100 }) });
+    const activeQuick = QUICK_FILTERS.filter(qf => qf.isActive(filters));
+    const ownedByActive = new Set<keyof FilterState>();
+    activeQuick.forEach(qf => qf.ownsKeys.forEach(k => ownedByActive.add(k)));
+
+    const activePills: { key: string; label: string; clear: () => void; kind?: 'preset' | 'filter' }[] = [];
+    activeQuick.forEach(qf => activePills.push({
+        key: 'preset:' + qf.id,
+        label: qf.label + ' preset',
+        kind: 'preset',
+        clear: () => setFilters(prev => ({ ...DEFAULT_FILTERS, text: prev.text }))
+    }));
+
+    if (filters.hideAnonymous && !ownedByActive.has('hideAnonymous')) activePills.push({ key: 'anon', label: 'Hide unnamed', clear: () => update({ hideAnonymous: false }) });
+    if (filters.onlyMine && !ownedByActive.has('onlyMine')) activePills.push({ key: 'mine', label: 'Only my stakes', clear: () => update({ onlyMine: false }) });
+    if (filters.hideHighStake && !ownedByActive.has('hideHighStake')) activePills.push({ key: 'hs', label: 'Hide high-stake', clear: () => update({ hideHighStake: false }) });
+    if (filters.onlyJito && !ownedByActive.has('onlyJito')) activePills.push({ key: 'jito', label: 'Only Jito MEV', clear: () => update({ onlyJito: false }) });
+    if (!filters.hideDelinquent && !ownedByActive.has('hideDelinquent')) activePills.push({ key: 'del', label: 'Showing delinquent', clear: () => update({ hideDelinquent: true }) });
+    if (filters.minWizScore > 0 && !ownedByActive.has('minWizScore')) activePills.push({ key: 'wiz', label: 'Wiz ≥ ' + filters.minWizScore + '%', clear: () => update({ minWizScore: 0 }) });
+    if (filters.minApy > 0 && !ownedByActive.has('minApy')) activePills.push({ key: 'apy', label: 'APY ≥ ' + filters.minApy + '%', clear: () => update({ minApy: 0 }) });
+    if (filters.maxCommission < 100 && !ownedByActive.has('maxCommission')) activePills.push({ key: 'comm', label: 'Commission ≤ ' + filters.maxCommission + '%', clear: () => update({ maxCommission: 100 }) });
+    if (filters.maxSkipRate < 100 && !ownedByActive.has('maxSkipRate')) activePills.push({ key: 'skip', label: 'Skip ≤ ' + filters.maxSkipRate + '%', clear: () => update({ maxSkipRate: 100 }) });
 
     return (
         <div className="sw-search-shell" id="vlist-search">
@@ -216,9 +250,11 @@ const SearchBar: FC<SearchProps> = ({ validators, setFilter, walletValidators, s
                 {QUICK_FILTERS.map(qf => {
                     const active = qf.isActive(filters);
                     return (
-                        <button key={qf.id} type="button" className={'sw-chip' + (active ? ' sw-chip-active' : '')} onClick={() => setFilters(prev => qf.apply(prev))}>
-                            <i className={'bi ' + qf.icon + ' me-1'} /> {qf.label}
-                        </button>
+                        <OverlayTrigger key={qf.id} placement="top" overlay={<Tooltip>{qf.hint}</Tooltip>}>
+                            <button type="button" className={'sw-chip' + (active ? ' sw-chip-active' : '')} onClick={() => setFilters(prev => qf.apply(prev))}>
+                                <i className={'bi ' + qf.icon + ' me-1'} /> {qf.label}
+                            </button>
+                        </OverlayTrigger>
                     );
                 })}
                 <span className="sw-chip-divider" aria-hidden="true" />
@@ -270,7 +306,7 @@ const SearchBar: FC<SearchProps> = ({ validators, setFilter, walletValidators, s
                 <div className="sw-active-filters">
                     <span className="sw-active-label">Active filters:</span>
                     {activePills.map(p => (
-                        <button key={p.key} type="button" className="sw-active-pill" onClick={p.clear}>
+                        <button key={p.key} type="button" className={'sw-active-pill' + (p.kind === 'preset' ? ' sw-active-pill-preset' : '')} onClick={p.clear}>
                             {p.label}<i className="bi bi-x ms-1" />
                         </button>
                     ))}

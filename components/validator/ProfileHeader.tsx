@@ -34,10 +34,13 @@ const KpiTile: FC<{ label: string; value: string; help?: string }> = ({ label, v
 
 const ProfileHeader: FC<ProfileHeaderProps> = ({ validator, connected, onStake, onAlert }) => {
     const [showShare, setShowShare] = useState<boolean>(false);
+    const [claimDismissed, setClaimDismissed] = useState<boolean>(false);
 
     const xHandle = validator?.website && /(twitter\.com|x\.com)/i.test(validator.website)
         ? validator.website.replace(/^https?:\/\/(www\.)?(twitter|x)\.com\//i, '@').replace(/\/$/, '')
         : null;
+
+    const isClaimed = false; // Wire this to API when profile-ownership ships.
 
     return (
         <>
@@ -75,22 +78,21 @@ const ProfileHeader: FC<ProfileHeaderProps> = ({ validator, connected, onStake, 
                             {validator.above_halt_line ? (
                                 <span className="sw-pill sw-pill-emerald">Above halt line</span>
                             ) : null}
+                            {isClaimed ? (
+                                <span className="sw-pill sw-pill-verified">
+                                    <i className="bi bi-patch-check-fill me-1" /> Claimed profile
+                                </span>
+                            ) : null}
                         </div>
                         <h1 className="sw-profile-name">
                             <RenderName validator={validator} />
                         </h1>
                         {validator.description ? (
                             <p className="sw-profile-desc">{validator.description}</p>
-                        ) : (
-                            <p className="sw-profile-desc sw-profile-desc-empty">
-                                <i className="bi bi-info-circle me-1" />
-                                This validator hasn&rsquo;t added a bio yet — validators will soon be able to claim their profile
-                                to share updates, roadmap and social links.
-                            </p>
-                        )}
+                        ) : null}
 
                         <div className="sw-profile-links">
-                            {validator.website ? (
+                            {validator.website && !xHandle ? (
                                 <a href={validator.website} target="_blank" rel="noopener noreferrer" className="sw-profile-link">
                                     <i className="bi bi-globe me-1" /> Website
                                 </a>
@@ -148,6 +150,34 @@ const ProfileHeader: FC<ProfileHeaderProps> = ({ validator, connected, onStake, 
                     <KpiTile label="Uptime (30d)" value={validator.uptime.toFixed(2) + '%'} help="Rolling 30-day uptime." />
                 </div>
             </section>
+
+            {!isClaimed && !claimDismissed ? (
+                <div className="sw-claim-strip">
+                    <div className="sw-claim-copy">
+                        <div className="sw-claim-title">
+                            <i className="bi bi-patch-question me-2" /> Are you the operator of{' '}
+                            {validator.name ? <strong>{validator.name}</strong> : 'this validator'}?
+                        </div>
+                        <div className="sw-claim-sub">
+                            Claim your profile to post updates, add a bio, link your socials and respond to stakers.
+                        </div>
+                    </div>
+                    <div className="sw-claim-actions">
+                        <button type="button" className="btn sw-btn-primary sw-claim-cta">
+                            <i className="bi bi-patch-check me-2" /> Claim profile
+                        </button>
+                        <button
+                            type="button"
+                            className="sw-claim-dismiss"
+                            aria-label="Dismiss claim prompt"
+                            onClick={() => setClaimDismissed(true)}
+                        >
+                            <i className="bi bi-x-lg" />
+                        </button>
+                    </div>
+                </div>
+            ) : null}
+
             <ShareCardModal show={showShare} onHide={() => setShowShare(false)} validator={validator} />
         </>
     );

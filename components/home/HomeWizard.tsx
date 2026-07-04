@@ -26,7 +26,7 @@ export const PRESET_DEFINITIONS: Record<Exclude<WizardPreset, null>, {
         title: 'Most reliable',
         icon: 'bi-shield-check',
         description: 'Validators with low skip rates, high uptime and proven track records.',
-        accent: 'emerald',
+        accent: 'cyan',
         summary: vs => vs.filter(v => !v.delinquent && v.skip_rate <= 5 && v.uptime >= 99).length + ' validators meet the bar'
     },
     decentralize: {
@@ -40,14 +40,14 @@ export const PRESET_DEFINITIONS: Record<Exclude<WizardPreset, null>, {
         title: 'Capture MEV',
         icon: 'bi-lightning-charge-fill',
         description: 'Jito-enabled validators with reasonable MEV commission for extra rewards.',
-        accent: 'amber',
+        accent: 'gold',
         summary: vs => vs.filter(v => v.is_jito && v.jito_commission_bps / 100 <= 10).length + ' Jito-enabled'
     },
     lowfees: {
         title: 'Lowest fees',
         icon: 'bi-cash-coin',
         description: 'Trustworthy validators charging minimal commission — more goes to you.',
-        accent: 'sky',
+        accent: 'magenta',
         summary: vs => vs.filter(v => !v.delinquent && v.commission <= 5 && v.wiz_score >= 80).length + ' validators under 5% commission'
     }
 };

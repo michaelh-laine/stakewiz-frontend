@@ -162,6 +162,8 @@ class ValidatorListing extends React.Component<ValidatorListingI, {}> {
             <HomeShell
                 validators={this.props.state.validators}
                 clusterStats={this.props.state.clusterStats}
+                userPubkey={this.props.userPubkey}
+                walletValidators={this.props.state.walletValidators}
             >
                 {({preset}) => [
                     <SearchBar
@@ -248,16 +250,25 @@ class ValidatorList extends React.Component<ValidatorListI, {}> {
         list.push(this.renderValidator(i));
       }
       list.push(<div className='d-flex w-25 flex-grow-1' key='spacer-1'></div>);
-      list.push(<div className='d-flex w-25 flex-grow-1' key='spacer-2'></div>);    
-      const viewType = (this.props.showListView) ? ' vlist-view' : ' vcard-view';  
+      list.push(<div className='d-flex w-25 flex-grow-1' key='spacer-2'></div>);
+      const viewType = (this.props.showListView) ? ' vlist-view' : ' vcard-view';
+      const isEmpty = (this.props.validators as unknown as validatorI[]).length === 0;
 
       return (
           [
-            <div className={'d-flex justify-content-center'+viewType} key='flex-list-container'>
-                <div className={'d-flex flex-wrap w-100'}>
-                    {list}
+            isEmpty ? (
+                <div className='sw-empty-state' key='empty-state'>
+                    <div className='sw-empty-state-icon'><i className='bi bi-emoji-frown' /></div>
+                    <div className='sw-empty-state-title'>No validators match your filters</div>
+                    <div className='sw-empty-state-copy'>Try loosening a slider, clearing a preset, or removing the search query.</div>
                 </div>
-            </div>,
+            ) : (
+                <div className={'d-flex justify-content-center'+viewType} key='flex-list-container'>
+                    <div className={'d-flex flex-wrap w-100'}>
+                        {list}
+                    </div>
+                </div>
+            ),
             <WizScore 
                 key='wizScoreModal'  
                 showWizModal={this.props.showWizModal}

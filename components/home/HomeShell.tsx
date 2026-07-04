@@ -4,6 +4,8 @@ import Highlights from './Highlights';
 import HomeDashboard from './HomeDashboard';
 import HomeWizard, { WizardPreset } from './HomeWizard';
 import VariantSwitcher, { HomeVariant } from './VariantSwitcher';
+import WelcomeBack from './WelcomeBack';
+import RecentlyViewed from './RecentlyViewed';
 import { clusterStatsI, EpochInfoI, validatorI } from '../validator/interfaces';
 import { getEpochInfo } from '../common';
 
@@ -16,8 +18,10 @@ export interface HomeShellChildProps {
 const HomeShell: FC<{
     validators: validatorI[] | null;
     clusterStats: clusterStatsI | null;
+    userPubkey: string | null;
+    walletValidators: string[] | null;
     children: (props: HomeShellChildProps) => React.ReactNode;
-}> = ({ validators, clusterStats, children }) => {
+}> = ({ validators, clusterStats, userPubkey, walletValidators, children }) => {
     const [variant, setVariant] = useState<HomeVariant>('curated');
     const [epochInfo, setEpochInfo] = useState<EpochInfoI | null>(null);
     const [preset, setPreset] = useState<WizardPreset>(null);
@@ -61,6 +65,9 @@ const HomeShell: FC<{
             <div className="sw-home-top">
                 <VariantSwitcher variant={variant} onChange={handleVariantChange} />
             </div>
+
+            <WelcomeBack userPubkey={userPubkey} walletValidators={walletValidators} validators={validators} />
+
             {variant === 'curated' ? (
                 <>
                     <Hero
@@ -70,19 +77,26 @@ const HomeShell: FC<{
                         onScrollToList={scrollToList}
                         onOpenAdvanced={() => handleVariantChange('guided')}
                     />
+                    <RecentlyViewed validators={validators} />
                     <Highlights validators={validators} />
                 </>
             ) : null}
             {variant === 'dashboard' ? (
-                <HomeDashboard validators={validators} clusterStats={clusterStats} epochInfo={epochInfo} />
+                <>
+                    <HomeDashboard validators={validators} clusterStats={clusterStats} epochInfo={epochInfo} />
+                    <RecentlyViewed validators={validators} />
+                </>
             ) : null}
             {variant === 'guided' ? (
-                <HomeWizard
-                    validators={validators}
-                    clusterStats={clusterStats}
-                    selectedPreset={preset}
-                    onSelectPreset={setPreset}
-                />
+                <>
+                    <HomeWizard
+                        validators={validators}
+                        clusterStats={clusterStats}
+                        selectedPreset={preset}
+                        onSelectPreset={setPreset}
+                    />
+                    <RecentlyViewed validators={validators} />
+                </>
             ) : null}
             <div className="sw-home-list">{children({ preset })}</div>
         </div>

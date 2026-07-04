@@ -19,6 +19,8 @@ import { VoteSuccessChart } from './vote_success';
 import { SkipRateChart } from './skip_rate';
 import ProfileHeader from './ProfileHeader';
 import ProfileNav from './ProfileNav';
+import ValidatorUpdates from './ValidatorUpdates';
+import { pushRecentValidator } from '../home/RecentlyViewed';
 
 const API_URL = process.env.API_BASE_URL;
 
@@ -72,8 +74,9 @@ class ValidatorDetail extends React.Component<validatorDetailI,
 
             let title = this.props.vote_identity;
             if(json.name!='') title = json.name;
-            
+
             this.props.updateTitle(title);
+            pushRecentValidator(json.vote_identity);
           })
           .catch(e => {
             console.log(e);
@@ -291,8 +294,18 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                     onStake={() => this.setState({showStakeModal:true})}
                     onAlert={scrollToAlertForm}
                 />
-                <ProfileNav key='profileNav' />
+                <ProfileNav key='profileNav' tabs={[
+                    { id: 'overview', label: 'Overview', icon: 'bi-house-door' },
+                    { id: 'updates', label: 'Updates', icon: 'bi-megaphone' },
+                    { id: 'performance', label: 'Performance', icon: 'bi-graph-up' },
+                    { id: 'score', label: 'Wiz Score', icon: 'bi-award' },
+                    { id: 'stake', label: 'Stake history', icon: 'bi-bar-chart-line' },
+                    { id: 'commissions', label: 'Commissions', icon: 'bi-cash-coin' },
+                    { id: 'alerts', label: 'Alerts', icon: 'bi-bell' }
+                ]} />
                 <div id='overview' className='sw-anchor' />
+                <div id='updates' className='sw-anchor' />
+                <ValidatorUpdates validator={this.state.validator} />
                 </div>,
                 <div className='container-sm m-1 position-relative d-flex align-items-center validator-detail-header sw-legacy-hidden' key='validator-details-header'>
                     
