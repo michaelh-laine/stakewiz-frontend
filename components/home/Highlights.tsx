@@ -13,13 +13,13 @@ const HighlightCard: FC<{
     metricLabel: string;
     validator: validatorI;
 }> = ({ title, icon, accent, metric, metricLabel, validator }) => (
-    <div className={'sw-highlight-card sw-highlight-' + accent}>
-        <div className="sw-highlight-header">
-            <div className="sw-highlight-tag"><i className={'bi ' + icon + ' me-2'} />{title}</div>
-            <div className="sw-highlight-rank">{ordinal(validator.rank)}</div>
-        </div>
-        <Link href={'/validator/' + validator.vote_identity} passHref legacyBehavior>
-            <a className="sw-highlight-body no-underline">
+    <Link href={'/validator/' + validator.vote_identity} passHref legacyBehavior>
+        <a className={'sw-highlight-card sw-highlight-' + accent + ' no-underline'}>
+            <div className="sw-highlight-header">
+                <div className="sw-highlight-tag"><i className={'bi ' + icon + ' me-2'} />{title}</div>
+                <div className="sw-highlight-rank">{ordinal(validator.rank)}</div>
+            </div>
+            <div className="sw-highlight-body">
                 <div className="sw-highlight-logo">
                     <RenderImage img={validator.image} vote_identity={validator.vote_identity} size={56} />
                 </div>
@@ -27,18 +27,18 @@ const HighlightCard: FC<{
                     <RenderName validator={validator} />
                     {validator.is_jito ? <span className="sw-pill sw-pill-jito ms-2">JITO</span> : null}
                 </div>
-            </a>
-        </Link>
-        <div className="sw-highlight-metric">
-            <div className="sw-highlight-metric-value">{metric}</div>
-            <div className="sw-highlight-metric-label">{metricLabel}</div>
-        </div>
-        <div className="sw-highlight-meta">
-            <div><span className="sw-meta-label">Wiz</span><span className="sw-meta-value">{validator.wiz_score}%</span></div>
-            <div><span className="sw-meta-label">APY</span><span className="sw-meta-value">{validator.total_apy}%</span></div>
-            <div><span className="sw-meta-label">Comm.</span><span className="sw-meta-value">{validator.commission}%</span></div>
-        </div>
-    </div>
+            </div>
+            <div className="sw-highlight-metric">
+                <div className="sw-highlight-metric-value">{metric}</div>
+                <div className="sw-highlight-metric-label">{metricLabel}</div>
+            </div>
+            <div className="sw-highlight-meta">
+                <div><span className="sw-meta-label">Wiz</span><span className="sw-meta-value">{validator.wiz_score}%</span></div>
+                <div><span className="sw-meta-label">APY</span><span className="sw-meta-value">{validator.total_apy}%</span></div>
+                <div><span className="sw-meta-label">Comm.</span><span className="sw-meta-value">{validator.commission}%</span></div>
+            </div>
+        </a>
+    </Link>
 );
 
 const Highlights: FC<{ validators: validatorI[] | null }> = ({ validators }) => {
@@ -56,8 +56,8 @@ const Highlights: FC<{ validators: validatorI[] | null }> = ({ validators }) => 
     return (
         <section className="sw-highlights">
             <div className="sw-section-heading">
-                <h2 className="sw-section-title">Tonight&rsquo;s top picks</h2>
-                <p className="sw-section-sub">Curated based on the Stakewiz score and live network metrics. Click a card to dive in.</p>
+                <h2 className="sw-section-title">Today&rsquo;s top picks</h2>
+                <p className="sw-section-sub">Curated live from the Stakewiz score and network metrics. Click a card to dive in.</p>
             </div>
             <div className="sw-highlight-grid">
                 {picks.topScore ? <HighlightCard title="Top Wiz Score" icon="bi-trophy-fill" accent="gold" metric={picks.topScore.wiz_score + '%'} metricLabel="Wiz Score" validator={picks.topScore} /> : null}

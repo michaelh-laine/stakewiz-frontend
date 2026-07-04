@@ -413,6 +413,8 @@ body {
 }
 
 .sw-highlight-card {
+    display: flex;
+    flex-direction: column;
     background: var(--sw-bg-card);
     border: 1px solid var(--sw-border);
     border-radius: var(--sw-radius);
@@ -420,6 +422,9 @@ body {
     position: relative;
     overflow: hidden;
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    color: var(--sw-text) !important;
+    text-decoration: none !important;
+    cursor: pointer;
 }
 
 .sw-highlight-card::before {
