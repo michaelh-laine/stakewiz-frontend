@@ -23,6 +23,7 @@ require('bootstrap/dist/css/bootstrap.css');
 require('react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css')
 require('../css/wallet.css')
 require("../css/style.css");
+require("../css/redesign.css");
 
 
 const Stakewiz: FC<AppProps> = ({ Component, pageProps }) => {

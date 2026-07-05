@@ -17,6 +17,10 @@ import { CommissionHistoryI, JitoCommissionHistoryI } from '../stake/interfaces'
 import * as browser from '../../lib/browser';
 import { VoteSuccessChart } from './vote_success';
 import { SkipRateChart } from './skip_rate';
+import ProfileHeader from './ProfileHeader';
+import ProfileNav from './ProfileNav';
+import ValidatorUpdates from './ValidatorUpdates';
+import { pushRecentValidator } from '../home/RecentlyViewed';
 
 const API_URL = process.env.API_BASE_URL;
 
@@ -70,8 +74,9 @@ class ValidatorDetail extends React.Component<validatorDetailI,
 
             let title = this.props.vote_identity;
             if(json.name!='') title = json.name;
-            
+
             this.props.updateTitle(title);
+            pushRecentValidator(json.vote_identity);
           })
           .catch(e => {
             console.log(e);
@@ -123,149 +128,141 @@ class ValidatorDetail extends React.Component<validatorDetailI,
 
     renderJitoCommissionLabel() {
         if(this.state.validator !== null && this.state.validator.is_jito) {
-           
-                    
-                    return (
-                        <div className={'badge fw-normal badge-sm mx-1 border'+((this.state.validator.jito_commission_bps/100>10)?' border-warning':' border-info')}>
-                            <OverlayTrigger
-                                placement="top"
-                                overlay={
-                                    <Tooltip>
-                                        {(this.state.validator.jito_commission_bps/100 > 10) ?
-                                            "Caution: High MEV commission. This is the commission charged on MEV Tips earned through Jito, remainder goes to stakers."
-                                        :
-                                            "Commission charged on MEV Tips earned through Jito, remainder goes to stakers"}
-                                    </Tooltip>
-                                } 
-                            >
-                                <span>JITO {this.state.validator.jito_commission_bps/100}%</span>
-                            </OverlayTrigger>
-                        </div>
-                    )
-                
+            const jitoPct = this.state.validator.jito_commission_bps / 100;
+            const high = jitoPct > 10;
+            return (
+                <OverlayTrigger
+                    placement="top"
+                    overlay={
+                        <Tooltip>
+                            {high
+                                ? 'Caution: High MEV commission. This is the commission charged on MEV tips earned through Jito, remainder goes to stakers.'
+                                : 'Commission charged on MEV tips earned through Jito, remainder goes to stakers.'}
+                        </Tooltip>
+                    }
+                >
+                    <span className={'sw-commission-mev' + (high ? ' sw-commission-mev-warn' : '')}>
+                        <i className='bi bi-lightning-charge-fill me-1' />
+                        MEV {jitoPct}%
+                    </span>
+                </OverlayTrigger>
+            );
         }
+    }
+
+    renderCommissionTimeline(events: any[], kind: 'std' | 'jito') {
+        if (!events || events.length === 0) {
+            return (
+                <div className="sw-commission-empty">
+                    <i className="bi bi-clock-history sw-commission-empty-icon" />
+                    <div>
+                        <div className="sw-commission-empty-title">
+                            {kind === 'std'
+                                ? 'No commission changes on record'
+                                : 'No Jito MEV commission changes on record'}
+                        </div>
+                        <div className="sw-commission-empty-sub">
+                            Stakewiz data begins from 28 Dec 2021.
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const isSafari: boolean = browser.check('Safari');
+        const parseDate = (raw: string) => {
+            if (!raw) return null;
+            if (isSafari) {
+                const tz = raw.slice(-3) + ':00';
+                return new Date(raw.substring(0, 19).replace(/-/g, '/') + tz);
+            }
+            return new Date(raw);
+        };
+
+        const getCommission = (e: any): number | null => {
+            if (kind === 'std') return e.commission;
+            return e.commission_bps == null ? null : e.commission_bps / 100;
+        };
+
+        const points = events.map((e, i) => {
+            const current = getCommission(e);
+            const previous = i + 1 < events.length ? getCommission(events[i + 1]) : null;
+            const dateRaw = kind === 'std' ? e.observed_at : e.created_at;
+            const date = parseDate(dateRaw);
+            return { current, previous, date, isLast: i === events.length - 1 };
+        });
+
+        const values = points
+            .map(p => p.current)
+            .filter((v): v is number => typeof v === 'number');
+        const maxPct = values.length > 0 ? Math.max(...values, 10) : 10;
+
+        return (
+            <div className="sw-commission-timeline">
+                {points.map((p, i) => {
+                    const prev = p.previous;
+                    const cur = p.current;
+                    const prevIsNull = prev === null;
+                    const curIsNull = cur === null;
+                    const delta = !prevIsNull && !curIsNull ? cur - prev : null;
+                    let tone: 'up' | 'down' | 'flat' | 'meta' = 'meta';
+                    if (delta !== null) {
+                        if (delta > 0) tone = 'up';
+                        else if (delta < 0) tone = 'down';
+                        else tone = 'flat';
+                    }
+
+                    const curLabel = curIsNull
+                        ? 'Not running Jito'
+                        : cur + '%';
+                    const prevLabel = prevIsNull
+                        ? (kind === 'jito' ? 'Not running Jito' : 'N/A')
+                        : prev + '%';
+
+                    const dateStr = p.date
+                        ? p.date.toLocaleDateString(undefined, { dateStyle: 'medium' })
+                        : '—';
+                    const timeStr = p.date ? p.date.toLocaleTimeString(undefined, { timeStyle: 'short' }) : '';
+
+                    // Sparkline scale for the "new commission" row.
+                    const scale = typeof cur === 'number' ? Math.max(2, (cur / maxPct) * 100) : 0;
+
+                    return (
+                        <div key={'change-' + i} className={'sw-commission-event sw-commission-event-' + tone}>
+                            <div className="sw-commission-event-date">
+                                <div className="sw-commission-event-day">{dateStr}</div>
+                                <div className="sw-commission-event-time">{timeStr}</div>
+                            </div>
+                            <div className="sw-commission-event-change">
+                                <span className="sw-commission-old">{prevLabel}</span>
+                                <span className="sw-commission-arrow" aria-hidden="true">
+                                    <i className="bi bi-arrow-right" />
+                                </span>
+                                <span className="sw-commission-new">{curLabel}</span>
+                                {delta !== null ? (
+                                    <span className={'sw-commission-delta sw-commission-delta-' + tone}>
+                                        {delta > 0 ? '+' : delta < 0 ? '−' : ''}{Math.abs(delta).toFixed(delta % 1 === 0 ? 0 : 2)}%
+                                    </span>
+                                ) : null}
+                            </div>
+                            {typeof cur === 'number' ? (
+                                <div className="sw-commission-bar" aria-hidden="true">
+                                    <div className="sw-commission-bar-fill" style={{ width: scale + '%' }} />
+                                </div>
+                            ) : null}
+                        </div>
+                    );
+                })}
+            </div>
+        );
     }
 
     renderCommissionTable() {
-        if(this.state.commissionHistory!==null && this.state.commissionHistory.length>0) {
-
-            let rows: JSX.Element[] = []
-            this.state.commissionHistory.map((event,i) => {
-                let isSafari:boolean = browser.check('Safari');
-
-                let formatted_date: Date|null = null
-
-                if(isSafari){
-                    let timeZone = event.observed_at.slice(-3)+':00';
-                    formatted_date = new Date(event.observed_at.substring(0, 19).replace(/-/g, "/")+timeZone)
-                }else{                
-                    formatted_date = new Date(event.observed_at)
-                }
-
-                let prev_comm = (this.state.commissionHistory!==null && i+1 < this.state.commissionHistory.length) ? this.state.commissionHistory[i+1].commission+' %' : 'N/A'
-
-                let row = (
-                    <tr key={'commission-history-row-'+i}>
-                        <th scope='row' className='fw-normal'>
-                            {formatted_date.toLocaleDateString(undefined,{dateStyle:'medium'})+' '+formatted_date.toLocaleTimeString()}
-                        </th>
-                        <td>
-                            {prev_comm}
-                        </td>
-                        <td>
-                            {event.commission} %
-                        </td>
-                    </tr>
-                )
-                rows.push(row)
-            })
-
-            return (
-                <table className='table table-sm text-light table-dark'>
-                    <thead>
-                        <tr>
-                            <th scope='col'>
-                                Observation time
-                            </th>
-                            <th scope='col'>
-                                Previous commission
-                            </th>
-                            <th scope='col'>
-                                New commission
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows}
-                    </tbody>
-                </table>
-            )
-        }
-        else {
-            return <div>No commission changes in our records for this validator.<br /><br />Our data begins from 28 Dec 2021.</div>
-        }
-        
+        return this.renderCommissionTimeline(this.state.commissionHistory || [], 'std');
     }
 
     renderJitoCommissionTable() {
-        if(this.state.jitoCommissionHistory!==null && this.state.jitoCommissionHistory.length>0) {
-
-            let rows: JSX.Element[] = []
-            this.state.jitoCommissionHistory.map((event,i) => {
-                let isSafari:boolean = browser.check('Safari');
-
-                let formatted_date: Date|null = null
-
-                if(isSafari){
-                    let timeZone = event.created_at.slice(-3)+':00';
-                    formatted_date = new Date(event.created_at.substring(0, 19).replace(/-/g, "/")+timeZone)
-                }else{                
-                    formatted_date = new Date(event.created_at)
-                }
-                let prev_comm = (this.state.jitoCommissionHistory!==null && i+1 < this.state.jitoCommissionHistory.length && this.state.jitoCommissionHistory[i+1].commission_bps != null)  ? this.state.jitoCommissionHistory[i+1].commission_bps/100+' %' : null
-                if(i==this.state.jitoCommissionHistory.length-1) prev_comm = 'N/A';
-
-                let row = (
-                    <tr key={'commission-history-row-'+i}>
-                        <th scope='row' className='fw-normal'>
-                            {formatted_date.toLocaleDateString(undefined,{dateStyle:'medium'})+' '+formatted_date.toLocaleTimeString()}
-                        </th>
-                        <td>
-                            {(prev_comm==null) ? "Not running Jito" : prev_comm}
-                        </td>
-                        <td>
-                            {(event.commission_bps==null) ? "Not running Jito" : event.commission_bps/100+" %"}
-                        </td>
-                    </tr>
-                )
-                rows.push(row)
-            })
-
-            return (
-                <table className='table table-sm text-light table-dark'>
-                    <thead>
-                        <tr>
-                            <th scope='col'>
-                                Observation time
-                            </th>
-                            <th scope='col'>
-                                Previous commission
-                            </th>
-                            <th scope='col'>
-                                New commission
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows}
-                    </tbody>
-                </table>
-            )
-        }
-        else {
-            return <div>No commission changes in our records for this validator.<br /><br />Our data begins from 28 Dec 2021.</div>
-        }
-        
+        return this.renderCommissionTimeline(this.state.jitoCommissionHistory || [], 'jito');
     }
 
     render() {
@@ -281,7 +278,28 @@ class ValidatorDetail extends React.Component<validatorDetailI,
             let activated_stake = new Intl.NumberFormat().format(Number(this.state.validator.activated_stake.toFixed(0)));
 
             return ( [
-                <div className='container-sm m-1 position-relative d-flex align-items-center validator-detail-header' key='validator-details-header'>
+                <div className='sw-profile-wrap' key='validator-details-redesigned-wrap'>
+                <ProfileHeader
+                    key='profileHeader'
+                    validator={this.state.validator}
+                    connected={this.props.connected}
+                    onStake={() => this.setState({showStakeModal:true})}
+                    onAlert={scrollToAlertForm}
+                />
+                <ProfileNav key='profileNav' tabs={[
+                    { id: 'overview', label: 'Overview', icon: 'bi-house-door' },
+                    { id: 'updates', label: 'Updates', icon: 'bi-megaphone' },
+                    { id: 'performance', label: 'Performance', icon: 'bi-graph-up' },
+                    { id: 'score', label: 'Wiz Score', icon: 'bi-award' },
+                    { id: 'stake', label: 'Stake history', icon: 'bi-bar-chart-line' },
+                    { id: 'commissions', label: 'Commissions', icon: 'bi-cash-coin' },
+                    { id: 'alerts', label: 'Alerts', icon: 'bi-bell' }
+                ]} />
+                <div id='overview' className='sw-anchor' />
+                <div id='updates' className='sw-anchor' />
+                <ValidatorUpdates validator={this.state.validator} />
+                </div>,
+                <div className='container-sm m-1 position-relative d-flex align-items-center validator-detail-header sw-legacy-hidden' key='validator-details-header'>
                     
                    
                     <div className='d-flex flex-grow-1 flex-column validator-delinquency-container'>
@@ -364,50 +382,6 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                         </div>
                             <div className='row'>
                                 <div className='col'>
-                                        <div className='row mb-2'>
-                                            <div className='col col-md-2 fw-bold'>
-                                                Identity
-                                            </div>
-                                            <div className='col text-truncate'>
-
-                                                <OverlayTrigger
-                                                    placement="top"
-                                                    overlay={
-                                                        <Tooltip>
-                                                            Copy
-                                                        </Tooltip>
-                                                    } 
-                                                >
-                                                    <span className='pointer' onClick={() => {navigator.clipboard.writeText((this.state.validator!==null) ? this.state.validator.identity : '')}}>{this.state.validator.identity}</span>
-                                                </OverlayTrigger>
-                                            </div>
-                                        </div>
-                                </div>
-                            </div>
-                            <div className='row'>
-                                <div className='col'>
-                                    <div className='row mb-2'>
-                                            <div className='col col-md-2 fw-bold'>
-                                                Vote Account
-                                            </div>
-                                            <div className='col text-truncate'>
-
-                                                <OverlayTrigger
-                                                    placement="top"
-                                                    overlay={
-                                                        <Tooltip>
-                                                            Copy
-                                                        </Tooltip>
-                                                    } 
-                                                >
-                                                    <span className='pointer' onClick={() => {navigator.clipboard.writeText((this.state.validator!==null) ? this.state.validator.vote_identity : '')}}>{this.state.validator.vote_identity}</span>
-                                                </OverlayTrigger>
-                                            </div>
-                                        </div>
-                                </div>
-                            </div>
-                            <div className='row'>
-                                <div className='col'>
                                     <div className='row mb-2'>
                                         <div className='col col-md-2 fw-bold'>
                                             Description
@@ -470,38 +444,30 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                                                 <i className='bi bi-info-circle ms-2'></i>
                                             </OverlayTrigger>
                                         </div>
-                                        <div className='col d-flex align-items-center'>
-                                            <div>{this.state.validator.total_apy} %</div>
-                                            <div className='d-flex flex-row'>
-                                                <OverlayTrigger
-                                                    placement="bottom"
-                                                    overlay={
-                                                        <Tooltip>
-                                                            10-epoch median native staking APY
-                                                        </Tooltip>
-                                                    } 
-                                                >
-                                                    <div className='badge fw-normal badge-sm ms-2 me-1 bg-dark border border-light text-light'>
-                                                        <span className='font-italic'>S</span> {this.state.validator.staking_apy} %
-                                                    </div>
-                                                </OverlayTrigger>
-                                                {(this.state.validator.is_jito) ? 
+                                        <div className='col'>
+                                            <div className='sw-apy-cell'>
+                                                <div className='sw-apy-total'>{this.state.validator.total_apy}%</div>
+                                                <div className='sw-apy-breakdown'>
                                                     <OverlayTrigger
-                                                        placement="bottom"
-                                                        overlay={
-                                                            <Tooltip>
-                                                                10-epoch cluster-median Jito MEV APY
-                                                            </Tooltip>
-                                                        } 
+                                                        placement="top"
+                                                        overlay={<Tooltip>10-epoch median native staking APY</Tooltip>}
                                                     >
-                                                        <div className='badge fw-normal badge-sm bg-dark border border-light text-light'>
-                                                            <span className='font-italic'>J</span> {this.state.validator.jito_apy} %
-                                                        </div>
+                                                        <span className='sw-apy-part'>Staking <strong>{this.state.validator.staking_apy}%</strong></span>
                                                     </OverlayTrigger>
-                                                    : null
-                                                }
+                                                    {(this.state.validator.is_jito) ?
+                                                        <>
+                                                            <span className='sw-apy-sep' aria-hidden='true'>·</span>
+                                                            <OverlayTrigger
+                                                                placement="top"
+                                                                overlay={<Tooltip>10-epoch cluster-median Jito MEV APY</Tooltip>}
+                                                            >
+                                                                <span className='sw-apy-part sw-apy-part-mev'>MEV <strong>{this.state.validator.jito_apy}%</strong></span>
+                                                            </OverlayTrigger>
+                                                        </>
+                                                        : null
+                                                    }
+                                                </div>
                                             </div>
-                                            
                                         </div>
                                     </div>
                                 </div>
@@ -537,6 +503,7 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                     </div>
 
 
+                    <div id='performance' className='sw-anchor' />
                     <div className='d-flex mb-1 flex-grow-1 flex-wrap validator-detail-flex-container'>
                         <div className='flex-grow-1 m-1 validator-detail-flex-card delinquency-flex-card'>
                             <div className='validator-detail-flex-opacity-bg'></div>
@@ -566,6 +533,7 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                                 </div>
                             </div>
                         </div>
+                        <div id='stake' className='sw-anchor' />
                         <div className='flex-grow-1 m-1 validator-detail-flex-card'>
                             <div className='validator-detail-flex-opacity-bg'></div>
                             <div className='card text-light'>
@@ -642,6 +610,7 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                                 </div>
                             </div>
                         </div>
+                        <div id='score' className='sw-anchor' />
                         <div className='flex-grow-1 m-1 validator-detail-flex-card'>
                             <div className='validator-detail-flex-opacity-bg'></div>
                             <div className='card text-light'>
@@ -655,6 +624,7 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                                 </div>
                             </div>
                         </div>
+                        <div id='commissions' className='sw-anchor' />
                         <div className='flex-grow-1 m-1 validator-detail-flex-card'>
                             <div className='validator-detail-flex-opacity-bg'></div>
                             <div className='card text-light'>
@@ -675,6 +645,7 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                             </div>
                         </div>
                     </div>
+                    <div id='alerts' className='sw-anchor' />
                     <div className='row'>
                         <div ref={alertFormRef as React.RefObject<HTMLDivElement>} className='col p-2 text-white border border-white rounded'>
                             <AlertForm
