@@ -952,14 +952,72 @@ body {
 
 /* Wrap is exactly the thumb size — that way the range input, its
    runnable track, and the thumb all share one vertical box. The visual
-   track sits centred inside via top: 50% + translateY(-50%). */
+   track sits centred inside via top: 50% + translateY(-50%).
+   Extra top padding leaves room for the value bubbles above thumbs. */
 .sw-dual-track-wrap {
     position: relative;
     height: 22px;
     display: flex;
     align-items: center;
     padding: 0 11px;
+    margin-top: 30px;
+    touch-action: pan-y;
 }
+
+/* Live value bubbles above thumbs — always visible so users can see
+   exactly which value they're dragging. Positioned via the same %/px
+   calculation used by native range thumbs so they track precisely. */
+.sw-dual-bubble {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    transform: translateX(-50%);
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(11, 16, 32, 0.9);
+    border: 1px solid var(--sw-border-strong);
+    color: var(--sw-text);
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 3;
+    box-shadow: 0 2px 6px rgba(4, 8, 20, 0.35);
+}
+
+.sw-dual-bubble-role {
+    color: var(--sw-text-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.6rem;
+    font-weight: 700;
+}
+
+.sw-dual-bubble::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--sw-border-strong);
+    margin-top: 0;
+}
+
+.sw-dual-bubble-min {
+    border-color: rgba(75, 214, 255, 0.5);
+}
+
+.sw-dual-bubble-max {
+    border-color: rgba(124, 92, 255, 0.5);
+}
+
+.sw-dual-bubble-min::after { border-top-color: rgba(75, 214, 255, 0.5); }
+.sw-dual-bubble-max::after { border-top-color: rgba(124, 92, 255, 0.5); }
 
 .sw-dual-track {
     position: absolute;
@@ -1015,14 +1073,15 @@ body {
     border: none;
 }
 
-.sw-dual-thumb::-webkit-slider-thumb {
+/* Min thumb — cyan accent */
+.sw-dual-thumb-min::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     height: 22px;
     width: 22px;
     border-radius: 50%;
-    background: var(--sw-text);
-    border: 3px solid var(--sw-accent);
+    background: var(--sw-accent);
+    border: 3px solid var(--sw-text);
     box-shadow: 0 2px 8px rgba(4, 8, 20, 0.55);
     cursor: grab;
     pointer-events: auto;
@@ -1030,16 +1089,76 @@ body {
     transition: transform 0.1s ease, box-shadow 0.15s ease;
 }
 
-.sw-dual-thumb::-moz-range-thumb {
+.sw-dual-thumb-min::-moz-range-thumb {
     height: 22px;
     width: 22px;
     border-radius: 50%;
-    background: var(--sw-text);
-    border: 3px solid var(--sw-accent);
+    background: var(--sw-accent);
+    border: 3px solid var(--sw-text);
     box-shadow: 0 2px 8px rgba(4, 8, 20, 0.55);
     cursor: grab;
     pointer-events: auto;
     transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+/* Max thumb — violet accent, distinguishable from min */
+.sw-dual-thumb-max::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 22px;
+    width: 22px;
+    border-radius: 50%;
+    background: var(--sw-accent-2);
+    border: 3px solid var(--sw-text);
+    box-shadow: 0 2px 8px rgba(4, 8, 20, 0.55);
+    cursor: grab;
+    pointer-events: auto;
+    margin-top: 0;
+    transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.sw-dual-thumb-max::-moz-range-thumb {
+    height: 22px;
+    width: 22px;
+    border-radius: 50%;
+    background: var(--sw-accent-2);
+    border: 3px solid var(--sw-text);
+    box-shadow: 0 2px 8px rgba(4, 8, 20, 0.55);
+    cursor: grab;
+    pointer-events: auto;
+    transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+/* Dynamic z-index: whichever thumb the pointer is closest to floats
+   above so it always wins clicks/taps, even when the two thumbs sit
+   at or near the same value. */
+.sw-dual-thumb-active { z-index: 3; }
+.sw-dual-thumb-min:not(.sw-dual-thumb-active) { z-index: 2; }
+.sw-dual-thumb-max:not(.sw-dual-thumb-active) { z-index: 2; }
+
+/* Focused / dragging state — enlarged thumb + glow */
+.sw-dual-thumb:active::-webkit-slider-thumb,
+.sw-dual-thumb:focus::-webkit-slider-thumb {
+    transform: scale(1.15);
+    box-shadow: 0 4px 14px rgba(75, 214, 255, 0.5);
+    cursor: grabbing;
+}
+
+.sw-dual-thumb:active::-moz-range-thumb,
+.sw-dual-thumb:focus::-moz-range-thumb {
+    transform: scale(1.15);
+    box-shadow: 0 4px 14px rgba(75, 214, 255, 0.5);
+    cursor: grabbing;
+}
+
+.sw-dual-thumb-max:active::-webkit-slider-thumb,
+.sw-dual-thumb-max:focus::-webkit-slider-thumb {
+    box-shadow: 0 4px 14px rgba(124, 92, 255, 0.5);
+}
+
+.sw-dual-thumb-max:active::-moz-range-thumb,
+.sw-dual-thumb-max:focus::-moz-range-thumb {
+    box-shadow: 0 4px 14px rgba(124, 92, 255, 0.5);
 }
 
 .sw-dual-thumb:active::-webkit-slider-thumb {
@@ -1105,14 +1224,18 @@ body {
    desktop principle: wrap height and runnable-track height both match
    the thumb size so the thumb centres itself vertically. */
 @media (max-width: 720px) {
-    .sw-slider-grid { grid-template-columns: 1fr; gap: 1.25rem; }
-    .sw-dual-track-wrap { height: 28px; padding: 0 14px; }
+    .sw-slider-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .sw-dual-track-wrap { height: 28px; padding: 0 14px; margin-top: 34px; }
     .sw-dual-track { left: 14px; right: 14px; height: 7px; }
     .sw-dual-thumb::-webkit-slider-runnable-track { height: 28px; }
     .sw-dual-thumb::-moz-range-track { height: 28px; }
-    .sw-dual-thumb::-webkit-slider-thumb { height: 28px; width: 28px; border-width: 4px; }
-    .sw-dual-thumb::-moz-range-thumb { height: 28px; width: 28px; border-width: 4px; }
+    .sw-dual-thumb-min::-webkit-slider-thumb,
+    .sw-dual-thumb-max::-webkit-slider-thumb { height: 28px; width: 28px; border-width: 4px; }
+    .sw-dual-thumb-min::-moz-range-thumb,
+    .sw-dual-thumb-max::-moz-range-thumb { height: 28px; width: 28px; border-width: 4px; }
     .sw-dual-input input { padding: 0.55rem 0.7rem; font-size: 0.95rem; }
+    .sw-dual-bubble { padding: 0.28rem 0.65rem; font-size: 0.78rem; }
+    .sw-dual-bubble-role { font-size: 0.64rem; }
 }
 
 .sw-refine-controls {

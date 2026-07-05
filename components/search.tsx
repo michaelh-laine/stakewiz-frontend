@@ -189,6 +189,10 @@ const DualRange: FC<DualRangeProps> = ({ label, min, max, step, minValue, maxVal
     const fmt = format || ((v: number) => String(v));
     const [minText, setMinText] = useState<string>(fmt(minValue));
     const [maxText, setMaxText] = useState<string>(fmt(maxValue));
+    /** Which thumb the pointer is closest to — that one floats to the top so
+        it always wins the click even when both thumbs sit at the same value. */
+    const [activeThumb, setActiveThumb] = useState<'min' | 'max'>('min');
+    const wrapRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => { setMinText(fmt(minValue)); }, [minValue]);
     useEffect(() => { setMaxText(fmt(maxValue)); }, [maxValue]);
@@ -208,19 +212,51 @@ const DualRange: FC<DualRangeProps> = ({ label, min, max, step, minValue, maxVal
         }
     };
 
+    const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!wrapRef.current) return;
+        const rect = wrapRef.current.getBoundingClientRect();
+        if (rect.width === 0) return;
+        const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+        const distMin = Math.abs(pct - minPct);
+        const distMax = Math.abs(pct - maxPct);
+        setActiveThumb(distMax < distMin ? 'max' : 'min');
+    };
+
     return (
         <div className="sw-dual-range">
             <div className="sw-dual-head">
                 <span className="sw-dual-label">{label}</span>
                 <span className="sw-dual-range-summary">{fmt(minValue)}{unit} – {fmt(maxValue)}{unit}</span>
             </div>
-            <div className="sw-dual-track-wrap">
+            <div
+                ref={wrapRef}
+                className="sw-dual-track-wrap"
+                onPointerMove={onPointerMove}
+            >
                 <div className="sw-dual-track">
                     <div className="sw-dual-track-fill" style={{ left: minPct + '%', width: (maxPct - minPct) + '%' }} />
                 </div>
+                {/* Live value bubbles above each thumb — always visible so the
+                    user can see exactly what they're dragging. */}
+                <div
+                    className="sw-dual-bubble sw-dual-bubble-min"
+                    style={{ left: 'calc(' + minPct + '% + ' + (11 - (minPct * 22) / 100) + 'px)' }}
+                    aria-hidden="true"
+                >
+                    <span className="sw-dual-bubble-role">min</span>
+                    <span className="sw-dual-bubble-value">{fmt(minValue)}{unit}</span>
+                </div>
+                <div
+                    className="sw-dual-bubble sw-dual-bubble-max"
+                    style={{ left: 'calc(' + maxPct + '% + ' + (11 - (maxPct * 22) / 100) + 'px)' }}
+                    aria-hidden="true"
+                >
+                    <span className="sw-dual-bubble-role">max</span>
+                    <span className="sw-dual-bubble-value">{fmt(maxValue)}{unit}</span>
+                </div>
                 <input
                     type="range"
-                    className="sw-dual-thumb sw-dual-thumb-min"
+                    className={'sw-dual-thumb sw-dual-thumb-min' + (activeThumb === 'min' ? ' sw-dual-thumb-active' : '')}
                     min={min}
                     max={max}
                     step={step}
@@ -233,7 +269,7 @@ const DualRange: FC<DualRangeProps> = ({ label, min, max, step, minValue, maxVal
                 />
                 <input
                     type="range"
-                    className="sw-dual-thumb sw-dual-thumb-max"
+                    className={'sw-dual-thumb sw-dual-thumb-max' + (activeThumb === 'max' ? ' sw-dual-thumb-active' : '')}
                     min={min}
                     max={max}
                     step={step}
