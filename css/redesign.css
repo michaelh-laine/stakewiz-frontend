@@ -915,29 +915,198 @@ body {
 .sw-slider-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem 1.5rem;
+    gap: 1.25rem 1.5rem;
 }
 
-.sw-slider-row {
+/* =========================================================
+   Dual-thumb range slider (mobile-friendly, with numeric inputs)
+   ========================================================= */
+
+.sw-dual-range {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.55rem;
+    min-width: 0;
 }
 
-.sw-slider-label {
+.sw-dual-head {
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
     color: var(--sw-text-soft);
     font-size: 0.82rem;
 }
 
-.sw-slider-label strong {
+.sw-dual-label {
     color: var(--sw-text);
-    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 0.85rem;
 }
 
-.sw-range {
-    accent-color: var(--sw-accent);
+.sw-dual-range-summary {
+    color: var(--sw-text-soft);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+}
+
+.sw-dual-track-wrap {
+    position: relative;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+}
+
+.sw-dual-track {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: 50%;
+    height: 6px;
+    background: rgba(148, 163, 216, 0.14);
+    border-radius: 999px;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.sw-dual-track-fill {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: var(--sw-gradient-cta);
+    border-radius: 999px;
+}
+
+/* Two overlapping range inputs — track kept transparent, thumbs are
+   the interactive part. pointer-events: none on the track lets the
+   thumb catch drags without one input blocking the other. */
+.sw-dual-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    position: absolute;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 32px;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.sw-dual-thumb:focus { outline: none; }
+
+.sw-dual-thumb::-webkit-slider-runnable-track {
+    background: transparent;
+    height: 32px;
+    border: none;
+}
+
+.sw-dual-thumb::-moz-range-track {
+    background: transparent;
+    height: 32px;
+    border: none;
+}
+
+.sw-dual-thumb::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 22px;
+    width: 22px;
+    border-radius: 50%;
+    background: var(--sw-text);
+    border: 3px solid var(--sw-accent);
+    box-shadow: 0 2px 8px rgba(4, 8, 20, 0.55);
+    cursor: grab;
+    pointer-events: auto;
+    margin-top: 0;
+    transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.sw-dual-thumb::-moz-range-thumb {
+    height: 22px;
+    width: 22px;
+    border-radius: 50%;
+    background: var(--sw-text);
+    border: 3px solid var(--sw-accent);
+    box-shadow: 0 2px 8px rgba(4, 8, 20, 0.55);
+    cursor: grab;
+    pointer-events: auto;
+    transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.sw-dual-thumb:active::-webkit-slider-thumb {
+    cursor: grabbing;
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(75, 214, 255, 0.4);
+}
+
+.sw-dual-thumb:active::-moz-range-thumb {
+    cursor: grabbing;
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(75, 214, 255, 0.4);
+}
+
+/* Numeric inputs — direct-entry fallback (great on mobile) */
+.sw-dual-inputs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.sw-dual-input {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    color: var(--sw-text-mute);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+}
+
+.sw-dual-input input {
+    background: rgba(11, 16, 32, 0.55);
+    border: 1px solid var(--sw-border);
+    color: var(--sw-text);
+    border-radius: var(--sw-radius-sm);
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    width: 100%;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sw-dual-input input:focus {
+    outline: none;
+    border-color: var(--sw-accent);
+    box-shadow: 0 0 0 3px rgba(75, 214, 255, 0.14);
+}
+
+.sw-dual-hint {
+    color: var(--sw-text-mute);
+    font-size: 0.75rem;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+/* Bigger thumbs and stacked layout on touch devices */
+@media (max-width: 720px) {
+    .sw-slider-grid { grid-template-columns: 1fr; gap: 1.25rem; }
+    .sw-dual-thumb::-webkit-slider-thumb { height: 28px; width: 28px; border-width: 4px; }
+    .sw-dual-thumb::-moz-range-thumb { height: 28px; width: 28px; border-width: 4px; }
+    .sw-dual-track-wrap { height: 40px; padding: 0 14px; }
+    .sw-dual-track { left: 14px; right: 14px; height: 7px; }
+    .sw-dual-thumb { height: 40px; }
+    .sw-dual-thumb::-webkit-slider-runnable-track { height: 40px; }
+    .sw-dual-thumb::-moz-range-track { height: 40px; }
+    .sw-dual-input input { padding: 0.55rem 0.7rem; font-size: 0.95rem; }
 }
 
 .sw-refine-controls {

@@ -52,10 +52,12 @@ const SORT_LABELS: Record<SortKey, string> = {
 interface FilterState {
     text: string;
     goal: GoalId | null;
-    minWizScore: number;
-    minApy: number;
-    maxCommission: number;
-    maxSkipRate: number;
+    minWizScore: number; maxWizScore: number;
+    minApy: number; maxApy: number;
+    minCommission: number; maxCommission: number;
+    minSkipRate: number; maxSkipRate: number;
+    /** Log10 SOL — 0 = 1, 3 = 1K, 6 = 1M, 8 = 100M */
+    minStakeLog: number; maxStakeLog: number;
     hideAnonymous: boolean;
     hideHighStake: boolean;
     hideDelinquent: boolean;
@@ -66,12 +68,29 @@ interface FilterState {
     sortAuto: boolean;
 }
 
+// Stake filter is log-scaled — stake distribution spans 6 orders of magnitude.
+const STAKE_LOG_MIN = 0; // 1 SOL
+const STAKE_LOG_MAX = 8; // 100M SOL (well above the largest validator)
+
 const DEFAULT_FILTERS: FilterState = {
     text: '', goal: null,
-    minWizScore: 0, minApy: 0, maxCommission: 100, maxSkipRate: 100,
+    minWizScore: 0, maxWizScore: 100,
+    minApy: 0, maxApy: 15,
+    minCommission: 0, maxCommission: 100,
+    minSkipRate: 0, maxSkipRate: 100,
+    minStakeLog: STAKE_LOG_MIN, maxStakeLog: STAKE_LOG_MAX,
     hideAnonymous: false, hideHighStake: false, hideDelinquent: true,
     onlyJito: false, onlyMine: false,
     sortField: 'rank_asc', sortAuto: true
+};
+
+const isAtDefault = (f: FilterState, key: keyof FilterState): boolean => f[key] === DEFAULT_FILTERS[key];
+
+const formatStake = (sol: number): string => {
+    if (sol >= 1_000_000) return (sol / 1_000_000).toFixed(sol >= 10_000_000 ? 0 : 1) + 'M';
+    if (sol >= 1_000) return (sol / 1_000).toFixed(sol >= 10_000 ? 0 : 1) + 'K';
+    if (sol >= 10) return sol.toFixed(0);
+    return sol.toFixed(1);
 };
 
 interface Goal {
@@ -148,15 +167,112 @@ const writeUrlState = (f: FilterState) => {
     window.history.replaceState({}, '', url.toString());
 };
 
-const RangeRow: FC<{ label: string; value: number; min: number; max: number; step: number; unit: string; kind: 'min' | 'max'; onChange: (v: number) => void }> = ({ label, value, min, max, step, unit, kind, onChange }) => (
-    <div className="sw-slider-row">
-        <div className="sw-slider-label">
-            <span>{label}</span>
-            <strong>{kind === 'min' ? '≥ ' : '≤ '}{value}{unit}</strong>
+interface DualRangeProps {
+    label: string;
+    min: number;
+    max: number;
+    step: number;
+    minValue: number;
+    maxValue: number;
+    onChange: (patch: { min?: number; max?: number }) => void;
+    /** Formatter used both on the visual labels and in the numeric inputs. */
+    format?: (v: number) => string;
+    /** Parser for numeric input strings back into the slider's value domain. */
+    parse?: (s: string) => number | null;
+    /** Suffix shown after the input value (e.g. '%'). */
+    unit?: string;
+    /** Hint text below the range (e.g. exact SOL values for a log slider). */
+    hint?: string;
+}
+
+const DualRange: FC<DualRangeProps> = ({ label, min, max, step, minValue, maxValue, onChange, format, parse, unit = '', hint }) => {
+    const fmt = format || ((v: number) => String(v));
+    const [minText, setMinText] = useState<string>(fmt(minValue));
+    const [maxText, setMaxText] = useState<string>(fmt(maxValue));
+
+    useEffect(() => { setMinText(fmt(minValue)); }, [minValue]);
+    useEffect(() => { setMaxText(fmt(maxValue)); }, [maxValue]);
+
+    const range = max - min;
+    const minPct = ((minValue - min) / range) * 100;
+    const maxPct = ((maxValue - min) / range) * 100;
+
+    const commit = (kind: 'min' | 'max', raw: string) => {
+        const parsed = parse ? parse(raw) : Number(raw.replace(/[^0-9.\-]/g, ''));
+        if (parsed == null || Number.isNaN(parsed)) return;
+        const clamped = Math.max(min, Math.min(max, parsed));
+        if (kind === 'min') {
+            onChange({ min: Math.min(clamped, maxValue) });
+        } else {
+            onChange({ max: Math.max(clamped, minValue) });
+        }
+    };
+
+    return (
+        <div className="sw-dual-range">
+            <div className="sw-dual-head">
+                <span className="sw-dual-label">{label}</span>
+                <span className="sw-dual-range-summary">{fmt(minValue)}{unit} – {fmt(maxValue)}{unit}</span>
+            </div>
+            <div className="sw-dual-track-wrap">
+                <div className="sw-dual-track">
+                    <div className="sw-dual-track-fill" style={{ left: minPct + '%', width: (maxPct - minPct) + '%' }} />
+                </div>
+                <input
+                    type="range"
+                    className="sw-dual-thumb sw-dual-thumb-min"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={minValue}
+                    onChange={e => {
+                        const v = Math.min(Number(e.target.value), maxValue);
+                        onChange({ min: v });
+                    }}
+                    aria-label={label + ' minimum'}
+                />
+                <input
+                    type="range"
+                    className="sw-dual-thumb sw-dual-thumb-max"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={maxValue}
+                    onChange={e => {
+                        const v = Math.max(Number(e.target.value), minValue);
+                        onChange({ max: v });
+                    }}
+                    aria-label={label + ' maximum'}
+                />
+            </div>
+            <div className="sw-dual-inputs">
+                <label className="sw-dual-input">
+                    <span>Min</span>
+                    <input
+                        type="text"
+                        inputMode="decimal"
+                        value={minText}
+                        onChange={e => setMinText(e.target.value)}
+                        onBlur={e => commit('min', e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    />
+                </label>
+                <label className="sw-dual-input">
+                    <span>Max</span>
+                    <input
+                        type="text"
+                        inputMode="decimal"
+                        value={maxText}
+                        onChange={e => setMaxText(e.target.value)}
+                        onBlur={e => commit('max', e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    />
+                </label>
+            </div>
+            {hint ? <div className="sw-dual-hint">{hint}</div> : null}
         </div>
-        <input type="range" className="form-range sw-range" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))} />
-    </div>
-);
+    );
+};
 
 const SearchBar: FC<SearchProps> = ({
     validators, setFilter, walletValidators, stakeValidators,
@@ -228,6 +344,9 @@ const SearchBar: FC<SearchProps> = ({
     };
 
     // Filtering
+    const minStakeSol = Math.pow(10, filters.minStakeLog);
+    const maxStakeSol = Math.pow(10, filters.maxStakeLog);
+
     const filtered = useMemo(() => {
         if (!validators) return [];
         const q = filters.text.trim().toUpperCase();
@@ -241,10 +360,12 @@ const SearchBar: FC<SearchProps> = ({
             if (filters.hideHighStake && v.stake_ratio >= config.STAKE_CATEGORIES.HIGH) return false;
             if (filters.onlyJito && !v.is_jito) return false;
             if (filters.onlyMine && walletValidators && !walletValidators.includes(v.vote_identity)) return false;
-            if (v.wiz_score < filters.minWizScore) return false;
-            if (v.total_apy < filters.minApy) return false;
-            if (v.commission > filters.maxCommission) return false;
-            if (v.skip_rate > filters.maxSkipRate) return false;
+            if (v.wiz_score < filters.minWizScore || v.wiz_score > filters.maxWizScore) return false;
+            if (v.total_apy < filters.minApy || v.total_apy > filters.maxApy) return false;
+            if (v.commission < filters.minCommission || v.commission > filters.maxCommission) return false;
+            if (v.skip_rate < filters.minSkipRate || v.skip_rate > filters.maxSkipRate) return false;
+            const stake = v.activated_stake || 0;
+            if (stake < minStakeSol || stake > maxStakeSol) return false;
             return true;
         });
         const sf = filters.sortField;
@@ -280,10 +401,37 @@ const SearchBar: FC<SearchProps> = ({
     if (filters.hideHighStake && !owned.has('hideHighStake')) activePills.push({ key: 'hs', kind: 'clean', label: 'Hide high-stake', clear: () => update({ hideHighStake: false }) });
     if (filters.onlyJito && !owned.has('onlyJito')) activePills.push({ key: 'jito', kind: 'clean', label: 'Jito MEV only', clear: () => update({ onlyJito: false }) });
     if (!filters.hideDelinquent && !owned.has('hideDelinquent')) activePills.push({ key: 'del', kind: 'clean', label: 'Including delinquent', clear: () => update({ hideDelinquent: true }) });
-    if (filters.minWizScore > 0 && !owned.has('minWizScore')) activePills.push({ key: 'wiz', kind: 'refine', label: 'Wiz ≥ ' + filters.minWizScore + '%', clear: () => update({ minWizScore: 0 }) });
-    if (filters.minApy > 0 && !owned.has('minApy')) activePills.push({ key: 'apy', kind: 'refine', label: 'APY ≥ ' + filters.minApy + '%', clear: () => update({ minApy: 0 }) });
-    if (filters.maxCommission < 100 && !owned.has('maxCommission')) activePills.push({ key: 'comm', kind: 'refine', label: 'Commission ≤ ' + filters.maxCommission + '%', clear: () => update({ maxCommission: 100 }) });
-    if (filters.maxSkipRate < 100 && !owned.has('maxSkipRate')) activePills.push({ key: 'skip', kind: 'refine', label: 'Skip ≤ ' + filters.maxSkipRate + '%', clear: () => update({ maxSkipRate: 100 }) });
+
+    const wizMinOn = filters.minWizScore > DEFAULT_FILTERS.minWizScore && !owned.has('minWizScore');
+    const wizMaxOn = filters.maxWizScore < DEFAULT_FILTERS.maxWizScore && !owned.has('maxWizScore');
+    if (wizMinOn || wizMaxOn) activePills.push({ key: 'wiz', kind: 'refine',
+        label: 'Wiz ' + filters.minWizScore + '–' + filters.maxWizScore + '%',
+        clear: () => update({ minWizScore: DEFAULT_FILTERS.minWizScore, maxWizScore: DEFAULT_FILTERS.maxWizScore }) });
+
+    const apyMinOn = filters.minApy > DEFAULT_FILTERS.minApy && !owned.has('minApy');
+    const apyMaxOn = filters.maxApy < DEFAULT_FILTERS.maxApy && !owned.has('maxApy');
+    if (apyMinOn || apyMaxOn) activePills.push({ key: 'apy', kind: 'refine',
+        label: 'APY ' + filters.minApy + '–' + filters.maxApy + '%',
+        clear: () => update({ minApy: DEFAULT_FILTERS.minApy, maxApy: DEFAULT_FILTERS.maxApy }) });
+
+    const commMinOn = filters.minCommission > DEFAULT_FILTERS.minCommission && !owned.has('minCommission');
+    const commMaxOn = filters.maxCommission < DEFAULT_FILTERS.maxCommission && !owned.has('maxCommission');
+    if (commMinOn || commMaxOn) activePills.push({ key: 'comm', kind: 'refine',
+        label: 'Commission ' + filters.minCommission + '–' + filters.maxCommission + '%',
+        clear: () => update({ minCommission: DEFAULT_FILTERS.minCommission, maxCommission: DEFAULT_FILTERS.maxCommission }) });
+
+    const skipMinOn = filters.minSkipRate > DEFAULT_FILTERS.minSkipRate && !owned.has('minSkipRate');
+    const skipMaxOn = filters.maxSkipRate < DEFAULT_FILTERS.maxSkipRate && !owned.has('maxSkipRate');
+    if (skipMinOn || skipMaxOn) activePills.push({ key: 'skip', kind: 'refine',
+        label: 'Skip ' + filters.minSkipRate + '–' + filters.maxSkipRate + '%',
+        clear: () => update({ minSkipRate: DEFAULT_FILTERS.minSkipRate, maxSkipRate: DEFAULT_FILTERS.maxSkipRate }) });
+
+    const stakeMinOn = filters.minStakeLog > DEFAULT_FILTERS.minStakeLog && !owned.has('minStakeLog');
+    const stakeMaxOn = filters.maxStakeLog < DEFAULT_FILTERS.maxStakeLog && !owned.has('maxStakeLog');
+    if (stakeMinOn || stakeMaxOn) activePills.push({ key: 'stake', kind: 'refine',
+        label: 'Stake ◎ ' + formatStake(Math.pow(10, filters.minStakeLog)) + '–' + formatStake(Math.pow(10, filters.maxStakeLog)),
+        clear: () => update({ minStakeLog: DEFAULT_FILTERS.minStakeLog, maxStakeLog: DEFAULT_FILTERS.maxStakeLog }) });
+
     if (!filters.sortAuto) activePills.push({ key: 'sort', kind: 'refine', label: 'Sort: ' + SORT_LABELS[filters.sortField], clear: () => update({ sortField: 'rank_asc', sortAuto: true }) });
 
     const onlyMineDisabled = !walletValidators || walletValidators.length < 1;
@@ -388,10 +536,65 @@ const SearchBar: FC<SearchProps> = ({
             {refineOpen ? (
                 <div className="sw-refine-panel">
                     <div className="sw-slider-grid">
-                        <RangeRow label="Wiz Score" value={filters.minWizScore} min={0} max={100} step={1} unit="%" kind="min" onChange={v => update({ minWizScore: v })} />
-                        <RangeRow label="TrueAPY" value={filters.minApy} min={0} max={12} step={0.1} unit="%" kind="min" onChange={v => update({ minApy: v })} />
-                        <RangeRow label="Commission" value={filters.maxCommission} min={0} max={100} step={1} unit="%" kind="max" onChange={v => update({ maxCommission: v })} />
-                        <RangeRow label="Skip rate" value={filters.maxSkipRate} min={0} max={100} step={0.5} unit="%" kind="max" onChange={v => update({ maxSkipRate: v })} />
+                        <DualRange
+                            label="Wiz Score"
+                            min={0} max={100} step={1} unit="%"
+                            minValue={filters.minWizScore} maxValue={filters.maxWizScore}
+                            onChange={p => update({
+                                minWizScore: p.min ?? filters.minWizScore,
+                                maxWizScore: p.max ?? filters.maxWizScore
+                            })}
+                        />
+                        <DualRange
+                            label="TrueAPY"
+                            min={0} max={15} step={0.1} unit="%"
+                            minValue={filters.minApy} maxValue={filters.maxApy}
+                            format={v => v.toFixed(1)}
+                            onChange={p => update({
+                                minApy: p.min ?? filters.minApy,
+                                maxApy: p.max ?? filters.maxApy
+                            })}
+                        />
+                        <DualRange
+                            label="Commission"
+                            min={0} max={100} step={1} unit="%"
+                            minValue={filters.minCommission} maxValue={filters.maxCommission}
+                            onChange={p => update({
+                                minCommission: p.min ?? filters.minCommission,
+                                maxCommission: p.max ?? filters.maxCommission
+                            })}
+                        />
+                        <DualRange
+                            label="Skip rate"
+                            min={0} max={100} step={0.5} unit="%"
+                            minValue={filters.minSkipRate} maxValue={filters.maxSkipRate}
+                            format={v => v.toFixed(1)}
+                            onChange={p => update({
+                                minSkipRate: p.min ?? filters.minSkipRate,
+                                maxSkipRate: p.max ?? filters.maxSkipRate
+                            })}
+                        />
+                        <DualRange
+                            label="Stake (SOL)"
+                            min={STAKE_LOG_MIN} max={STAKE_LOG_MAX} step={0.1}
+                            minValue={filters.minStakeLog} maxValue={filters.maxStakeLog}
+                            format={v => '◎ ' + formatStake(Math.pow(10, v))}
+                            parse={s => {
+                                const cleaned = s.replace(/[◎,\s]/g, '').toUpperCase();
+                                const m = cleaned.match(/^(-?\d*\.?\d+)([KM]?)$/);
+                                if (!m) return null;
+                                let n = parseFloat(m[1]);
+                                if (m[2] === 'K') n *= 1_000;
+                                if (m[2] === 'M') n *= 1_000_000;
+                                if (n <= 0) return STAKE_LOG_MIN;
+                                return Math.log10(n);
+                            }}
+                            onChange={p => update({
+                                minStakeLog: p.min ?? filters.minStakeLog,
+                                maxStakeLog: p.max ?? filters.maxStakeLog
+                            })}
+                            hint="Log-scaled: drag either end or type e.g. 50K, 1.5M"
+                        />
                     </div>
                     <div className="sw-refine-controls">
                         <label className="sw-switch">
