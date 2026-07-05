@@ -72,9 +72,6 @@ const ProfileHeader: FC<ProfileHeaderProps> = ({ validator, connected, onStake, 
                     <div className="sw-profile-main">
                         <div className="sw-profile-badges">
                             <span className="sw-profile-rank">Ranked {ordinal(validator.rank)} on Stakewiz</span>
-                            {validator.is_jito ? (
-                                <span className="sw-pill sw-pill-jito">JITO {validator.jito_commission_bps / 100}%</span>
-                            ) : null}
                             {validator.above_halt_line ? (
                                 <span className="sw-pill sw-pill-emerald">Above halt line</span>
                             ) : null}

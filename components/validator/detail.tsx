@@ -128,26 +128,25 @@ class ValidatorDetail extends React.Component<validatorDetailI,
 
     renderJitoCommissionLabel() {
         if(this.state.validator !== null && this.state.validator.is_jito) {
-           
-                    
-                    return (
-                        <div className={'badge fw-normal badge-sm mx-1 border'+((this.state.validator.jito_commission_bps/100>10)?' border-warning':' border-info')}>
-                            <OverlayTrigger
-                                placement="top"
-                                overlay={
-                                    <Tooltip>
-                                        {(this.state.validator.jito_commission_bps/100 > 10) ?
-                                            "Caution: High MEV commission. This is the commission charged on MEV Tips earned through Jito, remainder goes to stakers."
-                                        :
-                                            "Commission charged on MEV Tips earned through Jito, remainder goes to stakers"}
-                                    </Tooltip>
-                                } 
-                            >
-                                <span>JITO {this.state.validator.jito_commission_bps/100}%</span>
-                            </OverlayTrigger>
-                        </div>
-                    )
-                
+            const jitoPct = this.state.validator.jito_commission_bps / 100;
+            const high = jitoPct > 10;
+            return (
+                <OverlayTrigger
+                    placement="top"
+                    overlay={
+                        <Tooltip>
+                            {high
+                                ? 'Caution: High MEV commission. This is the commission charged on MEV tips earned through Jito, remainder goes to stakers.'
+                                : 'Commission charged on MEV tips earned through Jito, remainder goes to stakers.'}
+                        </Tooltip>
+                    }
+                >
+                    <span className={'sw-commission-mev' + (high ? ' sw-commission-mev-warn' : '')}>
+                        <i className='bi bi-lightning-charge-fill me-1' />
+                        MEV {jitoPct}%
+                    </span>
+                </OverlayTrigger>
+            );
         }
     }
 
@@ -496,38 +495,30 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                                                 <i className='bi bi-info-circle ms-2'></i>
                                             </OverlayTrigger>
                                         </div>
-                                        <div className='col d-flex align-items-center'>
-                                            <div>{this.state.validator.total_apy} %</div>
-                                            <div className='d-flex flex-row'>
-                                                <OverlayTrigger
-                                                    placement="bottom"
-                                                    overlay={
-                                                        <Tooltip>
-                                                            10-epoch median native staking APY
-                                                        </Tooltip>
-                                                    } 
-                                                >
-                                                    <div className='badge fw-normal badge-sm ms-2 me-1 bg-dark border border-light text-light'>
-                                                        <span className='font-italic'>S</span> {this.state.validator.staking_apy} %
-                                                    </div>
-                                                </OverlayTrigger>
-                                                {(this.state.validator.is_jito) ? 
+                                        <div className='col'>
+                                            <div className='sw-apy-cell'>
+                                                <div className='sw-apy-total'>{this.state.validator.total_apy}%</div>
+                                                <div className='sw-apy-breakdown'>
                                                     <OverlayTrigger
-                                                        placement="bottom"
-                                                        overlay={
-                                                            <Tooltip>
-                                                                10-epoch cluster-median Jito MEV APY
-                                                            </Tooltip>
-                                                        } 
+                                                        placement="top"
+                                                        overlay={<Tooltip>10-epoch median native staking APY</Tooltip>}
                                                     >
-                                                        <div className='badge fw-normal badge-sm bg-dark border border-light text-light'>
-                                                            <span className='font-italic'>J</span> {this.state.validator.jito_apy} %
-                                                        </div>
+                                                        <span className='sw-apy-part'>Staking <strong>{this.state.validator.staking_apy}%</strong></span>
                                                     </OverlayTrigger>
-                                                    : null
-                                                }
+                                                    {(this.state.validator.is_jito) ?
+                                                        <>
+                                                            <span className='sw-apy-sep' aria-hidden='true'>·</span>
+                                                            <OverlayTrigger
+                                                                placement="top"
+                                                                overlay={<Tooltip>10-epoch cluster-median Jito MEV APY</Tooltip>}
+                                                            >
+                                                                <span className='sw-apy-part sw-apy-part-mev'>MEV <strong>{this.state.validator.jito_apy}%</strong></span>
+                                                            </OverlayTrigger>
+                                                        </>
+                                                        : null
+                                                    }
+                                                </div>
                                             </div>
-                                            
                                         </div>
                                     </div>
                                 </div>

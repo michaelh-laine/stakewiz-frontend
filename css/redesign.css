@@ -2227,6 +2227,7 @@ body {
     color: var(--sw-text) !important;
     justify-content: flex-start !important;
     display: block !important;
+    min-width: 0;
 }
 
 .validator-detail-box .row > .col > .row > .col:not(.fw-bold) .col {
@@ -2234,6 +2235,83 @@ body {
     text-align: left !important;
     justify-content: flex-start !important;
     padding: 0 !important;
+}
+
+/* =========================================================
+   TrueAPY cell — total value on top, breakdown as one caption
+   ========================================================= */
+
+.sw-apy-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.sw-apy-total {
+    color: var(--sw-text);
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
+.sw-apy-breakdown {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    color: var(--sw-text-mute);
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+}
+
+.sw-apy-part {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.sw-apy-part strong {
+    color: var(--sw-text-soft);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.sw-apy-part-mev strong {
+    color: var(--sw-accent-3);
+}
+
+.sw-apy-sep {
+    color: var(--sw-border-strong);
+    padding: 0 0.05rem;
+}
+
+/* MEV commission pill inside the Commission cell */
+.sw-commission-mev {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255, 181, 71, 0.12);
+    border: 1px solid rgba(255, 181, 71, 0.35);
+    color: var(--sw-accent-3);
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.sw-commission-mev-warn {
+    background: rgba(255, 107, 122, 0.12);
+    border-color: rgba(255, 107, 122, 0.4);
+    color: var(--sw-danger);
+}
+
+.sw-commission-mev .bi {
+    font-size: 0.75rem;
 }
 
 .validator-buttons {
