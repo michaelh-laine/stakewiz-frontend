@@ -12,50 +12,57 @@ import ordinal from 'ordinal';
 
 const API_URL = process.env.API_BASE_URL;
 
-function WizScoreRow(props) {
-
-    const renderTooltip = () => (
-        <Tooltip>
-          {props.tooltip}
-        </Tooltip>
-      );
-
-    let thresholdColor = 'text-white';
-    if(props.color=='green') {
-        thresholdColor = 'text-success';
-    }
-    else if(props.color=='red') {
-        thresholdColor = 'text-danger';
-    }
-    let color = null;
-    if(props.inverse) {
-        color = (props.score < props.threshold) ? thresholdColor : null;
-    }
-    else {
-        color = (props.score > props.threshold) ? thresholdColor : null;
-    }
-    let score = (props.addPercent) ? props.score+'%' : props.score;
-    if(props.sign!=undefined) score = props.sign+score;
-    return (
-                <tr> 
-                    <td>
-                        {props.label}
-                        <OverlayTrigger
-                            placement='right'    
-                            overlay={renderTooltip()}
-                        >
-                            <i className="bi bi-info ps-2"></i>
-                        </OverlayTrigger>
-                    </td>
-                    <td>
-                        {props.value}
-                    </td>
-                    <td>
-                        {score}
-                    </td>
-                </tr>
-    );
+interface ScorecardRow {
+    label: string;
+    tooltip: string;
+    value: string;
+    score: number | string;
+    addPercent?: boolean;
+    threshold?: number;
+    color?: 'green' | 'red';
+    inverse?: boolean;
+    sign?: '+' | '-' | '';
 }
+
+const ScorecardItem: React.FC<ScorecardRow> = (props) => {
+    // Tone rules mirror the original WizScoreRow logic
+    let tone: 'positive' | 'negative' | 'neutral' = 'neutral';
+    const t = typeof props.threshold === 'number' ? props.threshold : 0;
+    const numericScore = typeof props.score === 'number' ? props.score : NaN;
+    if (props.color === 'green') {
+        if (props.inverse) tone = numericScore < t ? 'positive' : 'neutral';
+        else tone = numericScore > t ? 'positive' : 'neutral';
+    } else if (props.color === 'red') {
+        if (props.inverse) tone = numericScore < t ? 'negative' : 'neutral';
+        else tone = numericScore > t ? 'negative' : 'neutral';
+    }
+
+    let scoreDisplay: string;
+    if (typeof props.score === 'number') {
+        const abs = Math.abs(props.score);
+        const rendered = props.addPercent ? abs + '%' : String(abs);
+        if (props.score === 0) scoreDisplay = props.addPercent ? '0%' : '0';
+        else if (props.score < 0) scoreDisplay = '−' + rendered;
+        else scoreDisplay = (props.sign || '+') + rendered;
+    } else {
+        scoreDisplay = props.score;
+    }
+
+    return (
+        <div className={'sw-scorecard-row sw-scorecard-tone-' + tone}>
+            <div className="sw-scorecard-label">
+                <span className="sw-scorecard-label-text">{props.label}</span>
+                <OverlayTrigger placement="top" overlay={<Tooltip>{props.tooltip}</Tooltip>}>
+                    <button type="button" className="sw-scorecard-info" aria-label="More info">
+                        <i className="bi bi-info-circle" />
+                    </button>
+                </OverlayTrigger>
+            </div>
+            <div className="sw-scorecard-value">{props.value}</div>
+            <div className="sw-scorecard-score">{scoreDisplay}</div>
+        </div>
+    );
+};
 
 class WizScoreBody extends React.Component<{
     validator: validatorI;
@@ -145,193 +152,80 @@ class WizScoreBody extends React.Component<{
         );
     }
 
-    renderBody() {
-        let body =  (
-            <div>
-                        <p>
-                            This score helps users pick good validators to stake with. 
-                            It&apos;s designed to reward behaviour that benefits the network and penalize behaviour that 
-                            harms the network (e.g. centralization of stake). We periodically update our weighting and 
-                            metrics used, but record the version with each score. The score below is using version&nbsp;
-                            <span id="scorecard-scoreversion">
-                               {this.props.validator.score_version}
-                            </span>. You can read the full details of the current version&apos;s weightings&nbsp; 
-                            <Link href="/faq#faq-wizscore" passHref target="_new">here</Link>.
-                        </p>
-                        <table className={"table table-sm text-white table-dark"}> 
-                            <thead>
-                                <tr> 
-                                    <th scope="col">
-                                        Category 
-                                    </th>
-                                    <th scope="col">
-                                        Value 
-                                    </th>
-                                    <th className="td-min-width" scope="col">
-                                        Score
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <WizScoreRow
-                                    label='Vote Success'
-                                    tooltip="Ratio of credits vs slots completed this epoch."
-                                    value={this.props.validator.vote_success+'%'}
-                                    score={this.props.validator.vote_success_score}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='green'
-                                    sign='+'
-                                /> 
-                                <WizScoreRow
-                                    label='Slot Skip Rate'
-                                    tooltip="Percentage of leader slots in which this validator failed to produce a block. Score is ignored for low-staked validators."
-                                    value={new Intl.NumberFormat().format(Number(this.props.validator.skip_rate.toFixed(1)))+'%'}
-                                    score={this.props.validator.skip_rate_score}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='green'
-                                    sign='+'
-                                /> 
-                                <WizScoreRow
-                                    label='Skip rate ignored'
-                                    tooltip="Skip rate is ignored if validator's stake is below a threshold (see FAQ)."
-                                    value={(this.props.validator.skip_rate_ignored) ? 'Yes' : 'No'}
-                                    score={(this.props.validator.skip_rate_ignored) ? 'scaled up' : 'N/A'}
-                                    addPercent={false}
-                                    threshold='0'
-                                    color='green'
-                                    sign=''
-                                />
-                                <WizScoreRow
-                                    label='Published Information'
-                                    tooltip="2.5% for each of these: name, logo, description &amp; website."
-                                    value={this.renderInfoCount()+' out of 5'}
-                                    score={this.props.validator.info_score}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='green'
-                                    sign='+'
-                                /> 
-                                <WizScoreRow
-                                    label='Commission'
-                                    tooltip="Up to +5% score for commission of 0%. No score for 10% commission and above."
-                                    value={this.props.validator.commission+'%'}
-                                    score={this.props.validator.commission_score}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='green'
-                                    sign='+'
-                                /> 
-                                <WizScoreRow
-                                    label='Operating History'
-                                    tooltip="Up to +10% for having at least 10 epoch history (counted from first epoch with stake)."
-                                    value={this.props.validator.first_epoch_distance+' epochs'}
-                                    score={this.props.validator.epoch_distance_score}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='green'
-                                    sign='+'
-                                /> 
-                                <WizScoreRow
-                                    label='Stake Weight'
-                                    tooltip="Up to +15%, 0% for any stake that is >= 10% of the largest validator's stake."
-                                    value={this.props.validator.stake_weight+'%'}
-                                    score={this.props.validator.stake_weight_score}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='green'
-                                    sign='+'
-                                />
-                                <WizScoreRow
-                                    label='Withdraw Authority'
-                                    tooltip="Having the vote account withdraw authority set to the validator's identity keypair is a bad security practice and incurs a -20% penalty."
-                                    value={this.renderWithdrawAuthorityValue()}
-                                    score={this.props.validator.withdraw_authority_score}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='red'
-                                    inverse={true}
-                                />
-                                <WizScoreRow
-                                    label={`ASN Concentration (${(this.props.validator.ip_asn) ? this.props.validator.ip_asn : 'N/A'})`}
-                                    tooltip="Stake concentration by ASN (ASN can comprise multiple physical locations). Penalty applied relative to the highest-staked ASN (which incurs the max penalty)."
-                                    value={this.props.validator.asn_concentration+'%'}
-                                    score={this.props.validator.asn_concentration_score}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='red'
-                                    inverse={true}
-                                />
-                                <WizScoreRow
-                                    label={`City Concentration (${(this.props.validator.ip_city) ? this.props.validator.ip_city : 'N/A'})`}
-                                    tooltip="Stake concentration by City (city can comprise multiple data centres). Penalty applied relative to the highest-staked city (which incurs the max penalty)."
-                                    value={this.props.validator.city_concentration+'%'}
-                                    score={this.props.validator.city_concentration_score}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='red'
-                                    inverse={true}
-                                />
-                                <WizScoreRow
-                                    label={`ASN + City Concentration (${(this.props.validator.ip_asn) ? this.props.validator.ip_asn : 'N/A'} + ${(this.props.validator.ip_city) ? this.props.validator.ip_city : 'N/A' })`}
-                                    tooltip="Stake concentration by City (city can comprise multiple data centres). Penalty applied relative to the highest-staked city (which incurs the max penalty)."
-                                    value={this.props.validator.asncity_concentration+'%'}
-                                    score={this.props.validator.asncity_concentration_score}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='red'
-                                    inverse={true}
-                                />
-                                <WizScoreRow
-                                    label={`TPU IP Concentration (${(this.props.validator.tpu_ip) ? this.props.validator.tpu_ip : 'N/A'})`}
-                                    tooltip="Stake concentration by TPU IP. Penalty applied relative to the highest-staked TPU IP (which incurs the max penalty). A penalty here implies the validator may be using a shared relayer instead of running their own."
-                                    value={this.props.validator.tpu_ip_concentration+'%'}
-                                    score={this.props.validator.tpu_ip_concentration_score}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='red'
-                                    inverse={true}
-                                />
-                                <WizScoreRow
-                                    label='Uptime (30 days)'
-                                    tooltip="Percentage of time a validator was not delinquent over the past 30 days (or since the validator was added to our database if less than 30 days)."
-                                    value={this.props.validator.uptime+'%'}
-                                    score={this.props.validator.uptime_score}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='green'
-                                    sign='+'
-                                />
-                                <WizScoreRow
-                                    label='Version Penalty'
-                                    tooltip="A penalty is applied for running an outdated or not recommended software version."
-                                    value={this.props.validator.version}
-                                    score={this.props.validator.invalid_version_score}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='red'
-                                    inverse={true}
-                                />
-                                <WizScoreRow
-                                    label='Superminority Penalty'
-                                    tooltip="A penalty is applied to validators in the superminority (highest 33.3% of stake weight)."
-                                    value={this.renderSuperminorityValue()}
-                                    score={this.props.validator.superminority_penalty}
-                                    addPercent={true}
-                                    threshold='0'
-                                    color='red'
-                                    inverse={true}
-                                />
-                            </tbody>
-                        </table>
-                        {this.renderCommissionAlert()}
-                        {this.renderNoVotingAlert()}
-                        {this.renderWizScore()}
-                    </div>
-        );
+    getRows(): ScorecardRow[] {
+        const v = this.props.validator;
+        return [
+            { label: 'Vote Success', tooltip: 'Ratio of credits vs slots completed this epoch.',
+              value: v.vote_success + '%', score: v.vote_success_score, addPercent: true, threshold: 0, color: 'green', sign: '+' },
+            { label: 'Slot Skip Rate', tooltip: 'Percentage of leader slots in which this validator failed to produce a block. Score is ignored for low-staked validators.',
+              value: new Intl.NumberFormat().format(Number(v.skip_rate.toFixed(1))) + '%', score: v.skip_rate_score, addPercent: true, threshold: 0, color: 'green', sign: '+' },
+            { label: 'Skip rate ignored', tooltip: "Skip rate is ignored if validator's stake is below a threshold (see FAQ).",
+              value: v.skip_rate_ignored ? 'Yes' : 'No', score: v.skip_rate_ignored ? 'scaled up' : 'N/A', addPercent: false, threshold: 0, color: 'green', sign: '' },
+            { label: 'Published Information', tooltip: '2.5% for each of these: name, logo, description & website.',
+              value: this.renderInfoCount() + ' out of 5', score: v.info_score, addPercent: true, threshold: 0, color: 'green', sign: '+' },
+            { label: 'Commission', tooltip: 'Up to +5% score for commission of 0%. No score for 10% commission and above.',
+              value: v.commission + '%', score: v.commission_score, addPercent: true, threshold: 0, color: 'green', sign: '+' },
+            { label: 'Operating History', tooltip: 'Up to +10% for having at least 10 epoch history (counted from first epoch with stake).',
+              value: v.first_epoch_distance + ' epochs', score: v.epoch_distance_score, addPercent: true, threshold: 0, color: 'green', sign: '+' },
+            { label: 'Stake Weight', tooltip: "Up to +15%, 0% for any stake that is >= 10% of the largest validator's stake.",
+              value: v.stake_weight + '%', score: v.stake_weight_score, addPercent: true, threshold: 0, color: 'green', sign: '+' },
+            { label: 'Withdraw Authority', tooltip: "Having the vote account withdraw authority set to the validator's identity keypair is a bad security practice and incurs a -20% penalty.",
+              value: this.renderWithdrawAuthorityValue(), score: v.withdraw_authority_score, addPercent: true, threshold: 0, color: 'red', inverse: true },
+            { label: 'ASN Concentration', tooltip: 'Stake concentration by ASN (ASN can comprise multiple physical locations). Penalty applied relative to the highest-staked ASN (which incurs the max penalty).',
+              value: v.asn_concentration + '%', score: v.asn_concentration_score, addPercent: true, threshold: 0, color: 'red', inverse: true },
+            { label: 'City Concentration', tooltip: 'Stake concentration by City (city can comprise multiple data centres). Penalty applied relative to the highest-staked city (which incurs the max penalty).',
+              value: v.city_concentration + '%', score: v.city_concentration_score, addPercent: true, threshold: 0, color: 'red', inverse: true },
+            { label: 'ASN + City Concentration', tooltip: 'Combined concentration by ASN and city. Penalty applied relative to the highest-staked combo (which incurs the max penalty).',
+              value: v.asncity_concentration + '%', score: v.asncity_concentration_score, addPercent: true, threshold: 0, color: 'red', inverse: true },
+            { label: 'TPU IP Concentration', tooltip: 'Stake concentration by TPU IP. Penalty applied relative to the highest-staked TPU IP (which incurs the max penalty). A penalty here implies the validator may be using a shared relayer instead of running their own.',
+              value: v.tpu_ip_concentration + '%', score: v.tpu_ip_concentration_score, addPercent: true, threshold: 0, color: 'red', inverse: true },
+            { label: 'Uptime (30 days)', tooltip: 'Percentage of time a validator was not delinquent over the past 30 days (or since the validator was added to our database if less than 30 days).',
+              value: v.uptime + '%', score: v.uptime_score, addPercent: true, threshold: 0, color: 'green', sign: '+' },
+            { label: 'Version Penalty', tooltip: 'A penalty is applied for running an outdated or not recommended software version.',
+              value: v.version || '—', score: v.invalid_version_score, addPercent: true, threshold: 0, color: 'red', inverse: true },
+            { label: 'Superminority Penalty', tooltip: 'A penalty is applied to validators in the superminority (highest 33.3% of stake weight).',
+              value: this.renderSuperminorityValue(), score: v.superminority_penalty, addPercent: true, threshold: 0, color: 'red', inverse: true }
+        ];
+    }
 
-        return body;
+    renderBody() {
+        const v = this.props.validator;
+        const rows = this.getRows();
+
+        return (
+            <div className="sw-scorecard">
+                <p className="sw-scorecard-intro">
+                    This score helps you pick good validators to stake with. It rewards behaviour that
+                    benefits the network and penalizes centralization. Weightings are versioned — this
+                    validator&rsquo;s score uses version <strong>{v.score_version}</strong>.{' '}
+                    <Link href="/faq#faq-wizscore" passHref target="_new">Learn how the score is computed.</Link>
+                </p>
+
+                <div className="sw-scorecard-list" role="list">
+                    <div className="sw-scorecard-head" aria-hidden="true">
+                        <span>Category</span>
+                        <span>Value</span>
+                        <span>Score</span>
+                    </div>
+                    {rows.map(r => <ScorecardItem key={r.label} {...r} />)}
+                </div>
+
+                {this.renderCommissionAlert()}
+                {this.renderNoVotingAlert()}
+                {this.renderTPUIPAlert()}
+
+                <div className="sw-scorecard-total">
+                    <div className="sw-scorecard-total-label">
+                        <WizEmblem fill="currentColor" width="28px" height="28px" />
+                        <span>Total Wiz Score</span>
+                    </div>
+                    <div className="sw-scorecard-total-value">
+                        {new Intl.NumberFormat().format(Number(v.wiz_score.toFixed(2)))}%
+                    </div>
+                    <div className="sw-scorecard-total-rank">Ranked {ordinal(v.rank)}</div>
+                </div>
+            </div>
+        );
     }
 
     render() {

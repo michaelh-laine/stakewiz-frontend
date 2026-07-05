@@ -2249,60 +2249,238 @@ body {
     color: var(--sw-text) !important;
 }
 
-.validator-detail-scorecard table {
-    color: var(--sw-text) !important;
-    border-color: var(--sw-border) !important;
-    width: 100%;
-    table-layout: fixed;
+/* =========================================================
+   Wiz Scorecard — ground-up viewport-safe layout (no <table>)
+   ========================================================= */
+
+.sw-scorecard {
+    color: var(--sw-text);
+    font-size: 0.9rem;
+    line-height: 1.55;
 }
 
-/* Two-column scorecard: category label left, value right — makes numeric
-   values (99.67%, 0%, 281 epochs) line up for easy scanning. */
-.validator-detail-scorecard table th:nth-child(1),
-.validator-detail-scorecard table td:nth-child(1) {
-    width: auto;
-    text-align: left !important;
+.sw-scorecard-intro {
+    color: var(--sw-text-soft);
+    margin: 0 0 1.15rem;
+    max-width: 62ch;
 }
 
-.validator-detail-scorecard table th:nth-child(2),
-.validator-detail-scorecard table td:nth-child(2) {
-    width: 40%;
-    text-align: right !important;
-    font-variant-numeric: tabular-nums;
+.sw-scorecard-intro a {
+    color: var(--sw-accent) !important;
+    text-decoration: none;
 }
 
-/* Some scorecards include a third "score" column; keep it right-aligned too. */
-.validator-detail-scorecard table th:nth-child(3),
-.validator-detail-scorecard table td:nth-child(3) {
-    width: 20%;
-    text-align: right !important;
-    color: var(--sw-text-mute) !important;
-    font-variant-numeric: tabular-nums;
+.sw-scorecard-intro a:hover { text-decoration: underline; }
+
+.sw-scorecard-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius);
+    overflow: hidden;
+    background: rgba(11, 16, 32, 0.35);
 }
 
-.validator-detail-scorecard th,
-.validator-detail-scorecard td {
-    border-color: var(--sw-border) !important;
-    background: transparent !important;
-    padding: 0.7rem 0.85rem !important;
-    vertical-align: middle;
-    word-break: break-word;
-}
-
-.validator-detail-scorecard th {
-    color: var(--sw-text-mute) !important;
-    font-weight: 500 !important;
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
-
-/* Info icon inside scorecard label */
-.validator-detail-scorecard td .bi-info {
+.sw-scorecard-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(6rem, 10rem) minmax(4.5rem, 6rem);
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.65rem 1rem;
+    background: rgba(148, 163, 216, 0.05);
+    border-bottom: 1px solid var(--sw-border);
     color: var(--sw-text-mute);
-    opacity: 0.7;
+    font-size: 0.7rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.sw-scorecard-head > span:nth-child(2) { text-align: right; }
+.sw-scorecard-head > span:nth-child(3) { text-align: right; }
+
+.sw-scorecard-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(6rem, 10rem) minmax(4.5rem, 6rem);
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--sw-border);
+    min-width: 0;
+}
+
+.sw-scorecard-row:last-child { border-bottom: 0; }
+
+.sw-scorecard-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.sw-scorecard-label-text {
+    color: var(--sw-text);
+    font-weight: 500;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+}
+
+.sw-scorecard-info {
+    background: transparent;
+    border: 0;
+    color: var(--sw-text-mute);
+    padding: 0;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+    flex-shrink: 0;
+    opacity: 0.65;
+    transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.sw-scorecard-info:hover { color: var(--sw-accent); opacity: 1; }
+
+.sw-scorecard-value {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--sw-text);
+    font-weight: 500;
+    overflow-wrap: anywhere;
+    min-width: 0;
+}
+
+.sw-scorecard-score {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: 0.88rem;
+    padding: 0.22rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(148, 163, 216, 0.08);
+    color: var(--sw-text-mute);
+    justify-self: end;
+    min-width: 4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sw-scorecard-tone-positive .sw-scorecard-score {
+    background: rgba(74, 222, 128, 0.14);
+    color: var(--sw-success);
+}
+
+.sw-scorecard-tone-negative .sw-scorecard-score {
+    background: rgba(255, 107, 122, 0.14);
+    color: var(--sw-danger);
+}
+
+/* Alerts inside the scorecard */
+.sw-scorecard .bg-danger,
+.sw-scorecard .bg-warning {
+    background: rgba(255, 107, 122, 0.12) !important;
+    color: var(--sw-danger) !important;
+    border: 1px solid rgba(255, 107, 122, 0.35);
+    border-radius: var(--sw-radius-sm);
+    padding: 0.75rem 1rem !important;
+    margin: 1rem 0 0 !important;
+    text-align: left !important;
+    font-size: 0.88rem;
+}
+
+.sw-scorecard .bg-warning {
+    background: rgba(255, 181, 71, 0.12) !important;
+    color: var(--sw-accent-3) !important;
+    border-color: rgba(255, 181, 71, 0.35);
+}
+
+/* Total footer */
+.sw-scorecard-total {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding: 1rem 1.15rem;
+    background: linear-gradient(135deg, rgba(75, 214, 255, 0.1), rgba(124, 92, 255, 0.08));
+    border: 1px solid rgba(75, 214, 255, 0.28);
+    border-radius: var(--sw-radius);
+}
+
+.sw-scorecard-total-label {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--sw-text);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.sw-scorecard-total-value {
+    font-family: josefin, system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1.65rem;
+    letter-spacing: -0.01em;
+    background: var(--sw-gradient-cta);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    font-variant-numeric: tabular-nums;
+}
+
+.sw-scorecard-total-rank {
+    color: var(--sw-text-mute);
     font-size: 0.85rem;
-    margin-left: 0.35rem;
+    white-space: nowrap;
+}
+
+/* Modal variant (WizScore modal opens from validator card) — same look. */
+.scorecard-modal .modal-body { padding: 1.25rem 1.35rem; }
+
+/* Responsive: stack value + score below label on narrow viewports so
+   long labels ("ASN + City Concentration") don't force horizontal scroll. */
+@media (max-width: 640px) {
+    .sw-scorecard-head { display: none; }
+    .sw-scorecard-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            'label score'
+            'value score';
+        row-gap: 0.2rem;
+        column-gap: 0.6rem;
+        padding: 0.85rem 0.9rem;
+    }
+    .sw-scorecard-label { grid-area: label; }
+    .sw-scorecard-label-text {
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--sw-text-mute);
+        font-weight: 600;
+    }
+    .sw-scorecard-value {
+        grid-area: value;
+        text-align: left;
+        font-size: 0.95rem;
+        color: var(--sw-text);
+    }
+    .sw-scorecard-score {
+        grid-area: score;
+        align-self: center;
+        font-size: 0.85rem;
+        min-width: 3.5rem;
+    }
+    .sw-scorecard-total {
+        grid-template-columns: 1fr;
+        text-align: center;
+        justify-items: center;
+        padding: 1.15rem;
+    }
+    .sw-scorecard-total-label { justify-content: center; }
+    .sw-scorecard-total-value { font-size: 2rem; }
 }
 
 /* Hide the redundant identity/vote copy rows in the legacy info panel
