@@ -2161,9 +2161,9 @@ body {
 
 .validator-detail-box .row > .col > .row {
     display: grid;
-    grid-template-columns: minmax(9rem, 12rem) 1fr;
+    grid-template-columns: minmax(11rem, 14rem) 1fr;
     align-items: baseline;
-    gap: 1rem;
+    gap: 1.25rem;
     margin: 0;
 }
 
@@ -2172,11 +2172,22 @@ body {
     font-weight: 500 !important;
     text-transform: uppercase;
     font-size: 0.72rem;
-    letter-spacing: 0.09em;
+    letter-spacing: 0.06em;
     padding: 0 !important;
     text-align: left;
     max-width: none;
     flex: initial;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.validator-detail-box .row > .col > .row > .col.fw-bold .bi-info-circle,
+.validator-detail-box .row > .col > .row > .col.fw-bold .bi-info {
+    font-size: 0.85rem;
+    color: var(--sw-text-mute);
+    opacity: 0.7;
 }
 
 .validator-detail-box .row > .col > .row > .col:not(.fw-bold) {
@@ -2242,22 +2253,56 @@ body {
     color: var(--sw-text) !important;
     border-color: var(--sw-border) !important;
     width: 100%;
+    table-layout: fixed;
+}
+
+/* Two-column scorecard: category label left, value right — makes numeric
+   values (99.67%, 0%, 281 epochs) line up for easy scanning. */
+.validator-detail-scorecard table th:nth-child(1),
+.validator-detail-scorecard table td:nth-child(1) {
+    width: auto;
+    text-align: left !important;
+}
+
+.validator-detail-scorecard table th:nth-child(2),
+.validator-detail-scorecard table td:nth-child(2) {
+    width: 40%;
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Some scorecards include a third "score" column; keep it right-aligned too. */
+.validator-detail-scorecard table th:nth-child(3),
+.validator-detail-scorecard table td:nth-child(3) {
+    width: 20%;
+    text-align: right !important;
+    color: var(--sw-text-mute) !important;
+    font-variant-numeric: tabular-nums;
 }
 
 .validator-detail-scorecard th,
 .validator-detail-scorecard td {
     border-color: var(--sw-border) !important;
     background: transparent !important;
-    padding: 0.55rem 0.75rem !important;
+    padding: 0.7rem 0.85rem !important;
     vertical-align: middle;
+    word-break: break-word;
 }
 
 .validator-detail-scorecard th {
     color: var(--sw-text-mute) !important;
     font-weight: 500 !important;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
+}
+
+/* Info icon inside scorecard label */
+.validator-detail-scorecard td .bi-info {
+    color: var(--sw-text-mute);
+    opacity: 0.7;
+    font-size: 0.85rem;
+    margin-left: 0.35rem;
 }
 
 /* Hide the redundant identity/vote copy rows in the legacy info panel
@@ -2658,8 +2703,12 @@ main > .container.p-relative {
     .validator-detail-flex-card .card-body { padding: 0.9rem; }
     .validator-detail-box { padding: 1rem 1.1rem !important; }
     .validator-detail-box .row > .col > .row {
-        grid-template-columns: minmax(7rem, 9rem) 1fr;
-        gap: 0.75rem;
+        grid-template-columns: minmax(8rem, 10rem) 1fr;
+        gap: 0.85rem;
+    }
+    .validator-detail-box .row > .col > .row > .col.fw-bold {
+        font-size: 0.68rem;
+        letter-spacing: 0.05em;
     }
     .sw-chart-wrap { min-height: 220px; margin: 0; }
     .sw-chart-wrap > div { height: 220px !important; }
