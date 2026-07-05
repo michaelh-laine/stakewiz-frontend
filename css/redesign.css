@@ -2151,10 +2151,19 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     min-width: 0;
     max-width: 100%;
     overflow: hidden;
+    gap: 0.75rem;
+}
+
+/* Chart cards should stretch their chart to fill the card body vertically
+   so the fixed chart height doesn't leave awkward empty space below. */
+.validator-detail-flex-card .card-body > .sw-chart-wrap,
+.validator-detail-flex-card .card-body > .sw-calendar-wrap {
+    align-self: stretch;
+    flex: 1 1 auto;
 }
 
 .validator-detail-flex-opacity-bg {
@@ -2541,18 +2550,29 @@ body {
 /* Delinquency calendar — horizontal scroll on narrow screens instead of overflow */
 .sw-calendar-wrap {
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: thin;
     padding-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
 }
 
 .sw-calendar-wrap::-webkit-scrollbar { height: 6px; }
 .sw-calendar-wrap::-webkit-scrollbar-thumb { background: var(--sw-border-strong); border-radius: 3px; }
 
-.sw-calendar-wrap > div,
+.sw-calendar-wrap > div {
+    min-width: 640px;
+    max-height: 200px;
+    display: flex;
+    align-items: center;
+}
+
 .sw-calendar-wrap svg {
     min-width: 640px;
+    height: auto;
+    max-height: 200px;
 }
 
 /* Google Charts internals — kill legacy strokes on their rects */
@@ -2566,9 +2586,253 @@ body {
     border-color: var(--sw-border) !important;
 }
 
-/* Card body containing charts should not center-align (charts occupy full width) */
+/* Epoch stake changes card — expand to fit its rich summary */
 .validator-detail-flex-card .card-body.epoch-stake-chart-container {
-    padding: 0.75rem;
+    padding: 1.25rem;
+    overflow: visible;
+}
+
+/* =========================================================
+   Stake changes this epoch — new KPI + bar + top movers
+   ========================================================= */
+
+.sw-epoch {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.sw-epoch-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.sw-epoch-kpi {
+    background: rgba(11, 16, 32, 0.55);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-sm);
+    padding: 0.85rem 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.sw-epoch-kpi::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+}
+
+.sw-epoch-kpi-in::before { background: var(--sw-success); }
+.sw-epoch-kpi-out::before { background: var(--sw-danger); }
+
+.sw-epoch-kpi-label {
+    color: var(--sw-text-mute);
+    font-size: 0.7rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.sw-epoch-kpi-in .sw-epoch-kpi-label i { color: var(--sw-success); }
+.sw-epoch-kpi-out .sw-epoch-kpi-label i { color: var(--sw-danger); }
+
+.sw-epoch-kpi-value {
+    color: var(--sw-text);
+    font-family: josefin, system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 1.3rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.sw-epoch-kpi-sub {
+    color: var(--sw-text-mute);
+    font-size: 0.78rem;
+}
+
+.sw-epoch-net {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.7rem 0.95rem;
+    border-radius: var(--sw-radius-sm);
+    background: rgba(148, 163, 216, 0.08);
+    border: 1px solid var(--sw-border);
+}
+
+.sw-epoch-net-label {
+    color: var(--sw-text-mute);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+}
+
+.sw-epoch-net-value {
+    font-family: josefin, system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.sw-epoch-net-positive .sw-epoch-net-value { color: var(--sw-success); }
+.sw-epoch-net-negative .sw-epoch-net-value { color: var(--sw-danger); }
+
+.sw-epoch-bar {
+    display: flex;
+    height: 10px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(11, 16, 32, 0.55);
+    border: 1px solid var(--sw-border);
+}
+
+.sw-epoch-bar-in {
+    background: linear-gradient(90deg, #22c1a3, #4ade80);
+    min-width: 3px;
+    transition: width 0.4s ease;
+}
+
+.sw-epoch-bar-out {
+    background: linear-gradient(90deg, #ff8a3d, #ff6b7a);
+    min-width: 3px;
+    transition: width 0.4s ease;
+}
+
+.sw-epoch-bar-legend {
+    display: flex;
+    justify-content: space-between;
+    color: var(--sw-text-mute);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-top: -0.25rem;
+}
+
+.sw-epoch-bar-legend > span:first-child { color: var(--sw-success); }
+.sw-epoch-bar-legend > span:last-child { color: var(--sw-danger); }
+
+.sw-epoch-movers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 0.35rem;
+}
+
+.sw-epoch-mover-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.sw-epoch-mover-title {
+    color: var(--sw-text-mute);
+    font-size: 0.7rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+}
+
+.sw-epoch-mover {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(11, 16, 32, 0.4);
+    border: 1px solid var(--sw-border);
+    border-radius: var(--sw-radius-sm);
+    padding: 0.45rem 0.65rem;
+    color: var(--sw-text);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    text-align: left;
+    min-width: 0;
+    gap: 0.5rem;
+}
+
+.sw-epoch-mover:hover {
+    border-color: var(--sw-border-strong);
+    background: rgba(11, 16, 32, 0.6);
+}
+
+.sw-epoch-mover-pubkey {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    color: var(--sw-text-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sw-epoch-mover-amount {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.sw-epoch-mover-in .sw-epoch-mover-amount { color: var(--sw-success); }
+.sw-epoch-mover-out .sw-epoch-mover-amount { color: var(--sw-danger); }
+
+/* Empty state when no stake changes */
+.sw-epoch-empty {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: rgba(11, 16, 32, 0.35);
+    border: 1px dashed var(--sw-border-strong);
+    border-radius: var(--sw-radius);
+    color: var(--sw-text-soft);
+}
+
+.sw-epoch-empty-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(148, 163, 216, 0.1);
+    color: var(--sw-text-mute);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+
+.sw-epoch-empty-title {
+    color: var(--sw-text);
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+}
+
+.sw-epoch-empty-sub {
+    color: var(--sw-text-mute);
+    font-size: 0.85rem;
+}
+
+@media (max-width: 480px) {
+    .sw-epoch-summary,
+    .sw-epoch-movers {
+        grid-template-columns: 1fr;
+    }
+    .sw-epoch-net {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.3rem;
+    }
 }
 
 /* Updated-at footer — align right, softer color */
