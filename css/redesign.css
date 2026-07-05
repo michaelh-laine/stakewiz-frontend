@@ -950,18 +950,21 @@ body {
     font-size: 0.8rem;
 }
 
+/* Wrap is exactly the thumb size — that way the range input, its
+   runnable track, and the thumb all share one vertical box. The visual
+   track sits centred inside via top: 50% + translateY(-50%). */
 .sw-dual-track-wrap {
     position: relative;
-    height: 32px;
+    height: 22px;
     display: flex;
     align-items: center;
-    padding: 0 10px;
+    padding: 0 11px;
 }
 
 .sw-dual-track {
     position: absolute;
-    left: 10px;
-    right: 10px;
+    left: 11px;
+    right: 11px;
     top: 50%;
     height: 6px;
     background: rgba(148, 163, 216, 0.14);
@@ -979,8 +982,8 @@ body {
 }
 
 /* Two overlapping range inputs — track kept transparent, thumbs are
-   the interactive part. pointer-events: none on the track lets the
-   thumb catch drags without one input blocking the other. */
+   the interactive part. Input height matches thumb height so the thumb
+   is naturally centred on the wrap's vertical middle in every browser. */
 .sw-dual-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -988,8 +991,10 @@ body {
     position: absolute;
     left: 0;
     right: 0;
+    top: 0;
+    bottom: 0;
     width: 100%;
-    height: 32px;
+    height: 100%;
     margin: 0;
     padding: 0;
     pointer-events: none;
@@ -1000,13 +1005,13 @@ body {
 
 .sw-dual-thumb::-webkit-slider-runnable-track {
     background: transparent;
-    height: 32px;
+    height: 22px;
     border: none;
 }
 
 .sw-dual-thumb::-moz-range-track {
     background: transparent;
-    height: 32px;
+    height: 22px;
     border: none;
 }
 
@@ -1096,16 +1101,17 @@ body {
     line-height: 1.4;
 }
 
-/* Bigger thumbs and stacked layout on touch devices */
+/* Bigger thumbs and stacked layout on touch devices — mirror the
+   desktop principle: wrap height and runnable-track height both match
+   the thumb size so the thumb centres itself vertically. */
 @media (max-width: 720px) {
     .sw-slider-grid { grid-template-columns: 1fr; gap: 1.25rem; }
+    .sw-dual-track-wrap { height: 28px; padding: 0 14px; }
+    .sw-dual-track { left: 14px; right: 14px; height: 7px; }
+    .sw-dual-thumb::-webkit-slider-runnable-track { height: 28px; }
+    .sw-dual-thumb::-moz-range-track { height: 28px; }
     .sw-dual-thumb::-webkit-slider-thumb { height: 28px; width: 28px; border-width: 4px; }
     .sw-dual-thumb::-moz-range-thumb { height: 28px; width: 28px; border-width: 4px; }
-    .sw-dual-track-wrap { height: 40px; padding: 0 14px; }
-    .sw-dual-track { left: 14px; right: 14px; height: 7px; }
-    .sw-dual-thumb { height: 40px; }
-    .sw-dual-thumb::-webkit-slider-runnable-track { height: 40px; }
-    .sw-dual-thumb::-moz-range-track { height: 40px; }
     .sw-dual-input input { padding: 0.55rem 0.7rem; font-size: 0.95rem; }
 }
 
