@@ -737,50 +737,39 @@ class WizScoreChart extends React.Component<{
         }
         else {
             return (
-                <Chart 
-                    chartType='LineChart'
-                    width="100%"
-                    height="20rem"
-                    data={this.state.wiz_scores}
-                    options={{
-                        backgroundColor: 'none',
-                        curveType: "function",
-                        colors: ['#fff', '#fff', '#fff'],
-                        lineWidth: 2,
-                        legend:{
-                            position:'none'
-                        },
-                        vAxis: {
-                            gridlines: {
-                                color: 'transparent'
+                <div className="sw-chart-wrap">
+                    <Chart
+                        chartType='LineChart'
+                        width="100%"
+                        height="260px"
+                        data={this.state.wiz_scores}
+                        options={{
+                            backgroundColor: 'transparent',
+                            curveType: 'function',
+                            colors: ['#4bd6ff'],
+                            lineWidth: 2,
+                            legend: { position: 'none' },
+                            interpolateNulls: true,
+                            vAxis: {
+                                gridlines: { color: 'rgba(148, 163, 216, 0.14)', count: 5 },
+                                minorGridlines: { color: 'transparent' },
+                                textStyle: { color: '#8a97c3', fontSize: 11, fontName: 'system-ui, sans-serif' },
+                                format: 'percent',
+                                baselineColor: 'rgba(148, 163, 216, 0.14)'
                             },
-                            textStyle: {
-                                color: '#fff'
+                            hAxis: {
+                                gridlines: { color: 'transparent' },
+                                minorGridlines: { color: 'transparent' },
+                                textStyle: { color: '#8a97c3', fontSize: 11, fontName: 'system-ui, sans-serif' },
+                                baselineColor: 'rgba(148, 163, 216, 0.14)'
                             },
-                            format: 'percent'
-                        },
-                        hAxis: {
-                            gridlines: {
-                                color: 'transparent'
+                            trendlines: {
+                                0: { color: '#ffb547', type: 'exponential', lineWidth: 2, opacity: 0.85 }
                             },
-                            textStyle: {
-                                color: '#fff'
-                            }
-                        },
-                        trendlines: {
-                            0: {
-                                color:'#ffc107',
-                                type: 'exponential'
-                            }
-                        },
-                        chartArea: {
-                            top: 20,
-                            left: 30,
-                            width:'100%',
-                            height:'80%'
-                        }
-                    }}
-                />
+                            chartArea: { top: 16, left: 52, right: 16, bottom: 32 }
+                        }}
+                    />
+                </div>
             )
         }
     };

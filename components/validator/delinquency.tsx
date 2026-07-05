@@ -60,16 +60,16 @@ export const DelinquencyChart: FC<{vote_identity: string, first_epoch: number}> 
     }
     else {
         return (
-            <div className='w-100 d-flex'>
-                <Calendar 
+            <div className='sw-calendar-wrap'>
+                <Calendar
                     key='del1'
                     values={delinquencies}
                     until={until}
                     start={startDate}
-                    weekLabelAttributes={{}}
-                    monthLabelAttributes={{}}
-                    panelColors={['#666', '#198754', '#e5b467', '#e2a124', '#dd6e1d', '#c34c0b']}
-                    panelAttributes={{}}
+                    weekLabelAttributes={{ style: { fill: '#8a97c3', fontSize: 10, fontFamily: 'system-ui, sans-serif' } }}
+                    monthLabelAttributes={{ style: { fill: '#8a97c3', fontSize: 11, fontFamily: 'system-ui, sans-serif' } }}
+                    panelColors={['rgba(148, 163, 216, 0.14)', '#4ade80', '#ffcc4d', '#ffb547', '#ff8a3d', '#ff6b7a']}
+                    panelAttributes={{ rx: 2, ry: 2, style: { stroke: 'transparent' } }}
                 />
             </div>
         )

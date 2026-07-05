@@ -59,29 +59,34 @@ export const EpochStakeChart: FC<{vote_identity: string, updateStake: Function}>
     }
     else {
         return (
-            <Chart 
+            <div className="sw-chart-wrap">
+                <Chart
                     key='epoch-stake-chart'
                     chartType='TreeMap'
                     width="100%"
-                    height="20rem"
+                    height="260px"
                     data={stakes}
                     options={{
-                        backgroundColor: 'none',
+                        backgroundColor: 'transparent',
                         highlightOnMouseOver: false,
                         maxDepth: 1,
                         maxPostDepth: 2,
-                        minColor: "#dc3545",
-                        maxColor: "#198754",
+                        minColor: "#ff6b7a",
+                        maxColor: "#4ade80",
+                        midColor: "#131b39",
                         headerHeight: 0,
                         hintOpacity: 0.4,
                         showScale: false,
                         useWeightedAverageForAggregation: true,
                         textStyle: {
-                            fontName: 'lato',
-                            bold: true
+                            fontName: 'system-ui, -apple-system, sans-serif',
+                            fontSize: 12,
+                            color: '#e6ecff',
+                            bold: false
                         }
                     }}
                 />
+            </div>
         )
     }
 }
