@@ -55,12 +55,61 @@ body {
 
 /* Navbar polish */
 .navbar {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
 }
 
 .navbar .navbar-brand {
     filter: drop-shadow(0 4px 12px rgba(75, 214, 255, 0.2));
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+}
+
+.navbar-flex-container {
+    align-items: center;
+}
+
+/* Force the Stakewiz brand to keep its natural, controlled height instead
+   of being scaled up to a full-width block on mobile (legacy CSS stacked
+   the container column-wise which made the logo huge). */
+.navbar .navbar-brand svg,
+.stakewiz-logo {
+    height: 48px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    display: block;
+}
+
+@media (max-width: 800px) {
+    .navbar {
+        padding: 0.6rem 0.75rem !important;
+        height: auto !important;
+    }
+    .navbar-flex-container {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap;
+    }
+    .navbar .navbar-brand svg,
+    .stakewiz-logo {
+        height: 40px !important;
+    }
+    .navbar-toggler {
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        margin: 0 !important;
+        flex-shrink: 0;
+    }
+    .navbar-collapse {
+        top: 3.75rem !important;
+        right: 0.75rem !important;
+    }
 }
 
 .navbar .nav-link {
@@ -2225,16 +2274,28 @@ body {
     padding: 0 !important;
     text-align: left !important;
     color: var(--sw-text) !important;
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: flex-start !important;
-    display: block !important;
+    gap: 0.4rem;
     min-width: 0;
 }
 
+.validator-detail-box .row > .col > .row > .col:not(.fw-bold) > * {
+    min-width: 0;
+}
+
+/* Nested Bootstrap .col used inside some value cells (e.g. Version's
+   double-wrapped col) should still lay out as a flex row, not block. */
 .validator-detail-box .row > .col > .row > .col:not(.fw-bold) .col {
-    display: block !important;
-    text-align: left !important;
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: flex-start !important;
     padding: 0 !important;
+    gap: 0.4rem;
+    min-width: 0;
 }
 
 /* =========================================================
