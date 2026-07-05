@@ -71,14 +71,23 @@ body {
     align-items: center;
 }
 
-/* Cap the Stakewiz brand height without over-constraining width — the SVG
-   has an explicit width attribute + a wide internal viewBox, so touching
-   max/min width crops the middle of the wordmark. Set only height and
-   let the browser scale width proportionally. */
+/* Fixed-height brand container — the SVG fills it via height: 100%,
+   which is the most consistent way to preserve its native aspect ratio
+   even when the SVG has hand-authored preserveAspectRatio="none" quirks. */
+.navbar .navbar-brand {
+    height: 48px;
+    display: inline-flex !important;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 0 !important;
+    overflow: visible;
+}
+
 .navbar .navbar-brand svg,
 .stakewiz-logo {
-    height: 48px !important;
+    height: 100% !important;
     width: auto !important;
+    max-width: none !important;
     margin: 0 !important;
     display: block;
 }
@@ -95,13 +104,9 @@ body {
         flex-wrap: nowrap;
     }
     .navbar .navbar-brand {
-        flex-shrink: 1;
+        height: 40px;
         min-width: 0;
-        overflow: hidden;
-    }
-    .navbar .navbar-brand svg,
-    .stakewiz-logo {
-        height: 40px !important;
+        overflow: visible;
     }
     .navbar-toggler {
         position: static !important;
@@ -2326,17 +2331,14 @@ body {
 
 .sw-apy-breakdown {
     display: inline-flex;
-    align-items: center;
+    align-items: baseline;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    column-gap: 0.5rem;
+    row-gap: 0.15rem;
     color: var(--sw-text-mute);
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     letter-spacing: 0.02em;
-    background: rgba(11, 16, 32, 0.45);
-    border: 1px solid var(--sw-border);
-    padding: 0.3rem 0.6rem;
-    border-radius: 999px;
-    line-height: 1;
+    line-height: 1.35;
 }
 
 .sw-apy-part {
