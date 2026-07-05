@@ -60,7 +60,9 @@ export const SkipRateChart: FC<{vote_identity: string}> = ({vote_identity}) => {
                     options={getChartOptions({
                         colors: [SW_CHART_COLORS.warn],
                         vAxisFormat: 'percent',
-                        vAxisBaseline: 0
+                        vAxisBaseline: 0,
+                        vAxisMin: 0,
+                        vAxisMax: 0.25
                     })}
                 />
             </div>

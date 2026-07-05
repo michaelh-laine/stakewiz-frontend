@@ -59,7 +59,9 @@ export const VoteSuccessChart: FC<{vote_identity: string}> = ({vote_identity}) =
                     data={allScores}
                     options={getChartOptions({
                         colors: [SW_CHART_COLORS.accent],
-                        vAxisFormat: 'percent'
+                        vAxisFormat: 'percent',
+                        vAxisMin: 0,
+                        vAxisMax: 1
                     })}
                 />
             </div>

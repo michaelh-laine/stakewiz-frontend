@@ -22,6 +22,10 @@ export interface ChartThemeOptions {
     vAxisFormat?: string;
     /** vAxis baseline value. */
     vAxisBaseline?: number | 'auto';
+    /** Force a Y-axis min value (useful for stable range on flat data). */
+    vAxisMin?: number;
+    /** Force a Y-axis max value. */
+    vAxisMax?: number;
     /** hAxis format override. */
     hAxisFormat?: string;
     /** Extra chart-area padding tweaks. */
@@ -96,6 +100,14 @@ export const getChartOptions = (opts: ChartThemeOptions = {}) => {
 
     if (vAxisFormat) options.vAxis.format = vAxisFormat;
     if (vAxisBaseline !== undefined) options.vAxis.baseline = vAxisBaseline;
+    if (opts.vAxisMin !== undefined) {
+        options.vAxis.minValue = opts.vAxisMin;
+        options.vAxis.viewWindow = { ...options.vAxis.viewWindow, min: opts.vAxisMin };
+    }
+    if (opts.vAxisMax !== undefined) {
+        options.vAxis.maxValue = opts.vAxisMax;
+        options.vAxis.viewWindow = { ...options.vAxis.viewWindow, max: opts.vAxisMax };
+    }
     if (hAxisFormat) options.hAxis.format = hAxisFormat;
     if (area) {
         options.areaOpacity = 0.15;

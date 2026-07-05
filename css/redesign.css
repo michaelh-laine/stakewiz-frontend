@@ -2054,7 +2054,7 @@ body {
    The legacy sections are siblings of .sw-profile-wrap under the page main element,
    so target them by class directly (they are unique to the validator detail page). */
 .validator-details-content {
-    max-width: 1200px !important;
+    max-width: min(1200px, 100%) !important;
     margin-left: auto !important;
     margin-right: auto !important;
     padding-left: 1rem;
@@ -2062,6 +2062,15 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+    min-width: 0;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+.sw-profile-wrap {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .validator-details-content > * {
@@ -2078,22 +2087,32 @@ body {
     padding-right: 0 !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
 }
 
+/* min-width: 0 on grid children is the standard fix for content that
+   would otherwise force the child (and its column) wider than the grid. */
 .validator-detail-flex-card {
     margin: 0 !important;
     width: auto !important;
-    max-width: none !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
     flex: initial !important;
     position: relative;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .validator-detail-flex-card > .card {
     height: 100%;
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .validator-detail-flex-card .card,
@@ -2133,6 +2152,9 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .validator-detail-flex-opacity-bg {
@@ -2257,12 +2279,16 @@ body {
     color: var(--sw-text);
     font-size: 0.9rem;
     line-height: 1.55;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .sw-scorecard-intro {
     color: var(--sw-text-soft);
     margin: 0 0 1.15rem;
     max-width: 62ch;
+    overflow-wrap: anywhere;
 }
 
 .sw-scorecard-intro a {
@@ -2493,14 +2519,22 @@ body {
 /* Chart wrappers — consistent inner padding + overflow control */
 .sw-chart-wrap {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     display: flex;
     align-items: stretch;
     min-height: 260px;
-    margin: 0 -0.25rem;
+    overflow: hidden;
 }
 
-.sw-chart-wrap > div {
+.sw-chart-wrap > div,
+.sw-chart-wrap > div > div {
     width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+}
+
+.sw-chart-wrap svg {
     max-width: 100% !important;
 }
 
