@@ -150,126 +150,119 @@ class ValidatorDetail extends React.Component<validatorDetailI,
         }
     }
 
-    renderCommissionTable() {
-        if(this.state.commissionHistory!==null && this.state.commissionHistory.length>0) {
-
-            let rows: JSX.Element[] = []
-            this.state.commissionHistory.map((event,i) => {
-                let isSafari:boolean = browser.check('Safari');
-
-                let formatted_date: Date|null = null
-
-                if(isSafari){
-                    let timeZone = event.observed_at.slice(-3)+':00';
-                    formatted_date = new Date(event.observed_at.substring(0, 19).replace(/-/g, "/")+timeZone)
-                }else{                
-                    formatted_date = new Date(event.observed_at)
-                }
-
-                let prev_comm = (this.state.commissionHistory!==null && i+1 < this.state.commissionHistory.length) ? this.state.commissionHistory[i+1].commission+' %' : 'N/A'
-
-                let row = (
-                    <tr key={'commission-history-row-'+i}>
-                        <th scope='row' className='fw-normal'>
-                            {formatted_date.toLocaleDateString(undefined,{dateStyle:'medium'})+' '+formatted_date.toLocaleTimeString()}
-                        </th>
-                        <td>
-                            {prev_comm}
-                        </td>
-                        <td>
-                            {event.commission} %
-                        </td>
-                    </tr>
-                )
-                rows.push(row)
-            })
-
+    renderCommissionTimeline(events: any[], kind: 'std' | 'jito') {
+        if (!events || events.length === 0) {
             return (
-                <table className='table table-sm text-light table-dark'>
-                    <thead>
-                        <tr>
-                            <th scope='col'>
-                                Observation time
-                            </th>
-                            <th scope='col'>
-                                Previous commission
-                            </th>
-                            <th scope='col'>
-                                New commission
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows}
-                    </tbody>
-                </table>
-            )
+                <div className="sw-commission-empty">
+                    <i className="bi bi-clock-history sw-commission-empty-icon" />
+                    <div>
+                        <div className="sw-commission-empty-title">
+                            {kind === 'std'
+                                ? 'No commission changes on record'
+                                : 'No Jito MEV commission changes on record'}
+                        </div>
+                        <div className="sw-commission-empty-sub">
+                            Stakewiz data begins from 28 Dec 2021.
+                        </div>
+                    </div>
+                </div>
+            );
         }
-        else {
-            return <div>No commission changes in our records for this validator.<br /><br />Our data begins from 28 Dec 2021.</div>
-        }
-        
+
+        const isSafari: boolean = browser.check('Safari');
+        const parseDate = (raw: string) => {
+            if (!raw) return null;
+            if (isSafari) {
+                const tz = raw.slice(-3) + ':00';
+                return new Date(raw.substring(0, 19).replace(/-/g, '/') + tz);
+            }
+            return new Date(raw);
+        };
+
+        const getCommission = (e: any): number | null => {
+            if (kind === 'std') return e.commission;
+            return e.commission_bps == null ? null : e.commission_bps / 100;
+        };
+
+        const points = events.map((e, i) => {
+            const current = getCommission(e);
+            const previous = i + 1 < events.length ? getCommission(events[i + 1]) : null;
+            const dateRaw = kind === 'std' ? e.observed_at : e.created_at;
+            const date = parseDate(dateRaw);
+            return { current, previous, date, isLast: i === events.length - 1 };
+        });
+
+        const values = points
+            .map(p => p.current)
+            .filter((v): v is number => typeof v === 'number');
+        const maxPct = values.length > 0 ? Math.max(...values, 10) : 10;
+
+        return (
+            <div className="sw-commission-timeline">
+                {points.map((p, i) => {
+                    const prev = p.previous;
+                    const cur = p.current;
+                    const prevIsNull = prev === null;
+                    const curIsNull = cur === null;
+                    const delta = !prevIsNull && !curIsNull ? cur - prev : null;
+                    let tone: 'up' | 'down' | 'flat' | 'meta' = 'meta';
+                    if (delta !== null) {
+                        if (delta > 0) tone = 'up';
+                        else if (delta < 0) tone = 'down';
+                        else tone = 'flat';
+                    }
+
+                    const curLabel = curIsNull
+                        ? 'Not running Jito'
+                        : cur + '%';
+                    const prevLabel = prevIsNull
+                        ? (kind === 'jito' ? 'Not running Jito' : 'N/A')
+                        : prev + '%';
+
+                    const dateStr = p.date
+                        ? p.date.toLocaleDateString(undefined, { dateStyle: 'medium' })
+                        : '—';
+                    const timeStr = p.date ? p.date.toLocaleTimeString(undefined, { timeStyle: 'short' }) : '';
+
+                    // Sparkline scale for the "new commission" row.
+                    const scale = typeof cur === 'number' ? Math.max(2, (cur / maxPct) * 100) : 0;
+
+                    return (
+                        <div key={'change-' + i} className={'sw-commission-event sw-commission-event-' + tone}>
+                            <div className="sw-commission-event-date">
+                                <div className="sw-commission-event-day">{dateStr}</div>
+                                <div className="sw-commission-event-time">{timeStr}</div>
+                            </div>
+                            <div className="sw-commission-event-change">
+                                <span className="sw-commission-old">{prevLabel}</span>
+                                <span className="sw-commission-arrow" aria-hidden="true">
+                                    <i className="bi bi-arrow-right" />
+                                </span>
+                                <span className="sw-commission-new">{curLabel}</span>
+                                {delta !== null ? (
+                                    <span className={'sw-commission-delta sw-commission-delta-' + tone}>
+                                        {delta > 0 ? '+' : delta < 0 ? '−' : ''}{Math.abs(delta).toFixed(delta % 1 === 0 ? 0 : 2)}%
+                                    </span>
+                                ) : null}
+                            </div>
+                            {typeof cur === 'number' ? (
+                                <div className="sw-commission-bar" aria-hidden="true">
+                                    <div className="sw-commission-bar-fill" style={{ width: scale + '%' }} />
+                                </div>
+                            ) : null}
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    }
+
+    renderCommissionTable() {
+        return this.renderCommissionTimeline(this.state.commissionHistory || [], 'std');
     }
 
     renderJitoCommissionTable() {
-        if(this.state.jitoCommissionHistory!==null && this.state.jitoCommissionHistory.length>0) {
-
-            let rows: JSX.Element[] = []
-            this.state.jitoCommissionHistory.map((event,i) => {
-                let isSafari:boolean = browser.check('Safari');
-
-                let formatted_date: Date|null = null
-
-                if(isSafari){
-                    let timeZone = event.created_at.slice(-3)+':00';
-                    formatted_date = new Date(event.created_at.substring(0, 19).replace(/-/g, "/")+timeZone)
-                }else{                
-                    formatted_date = new Date(event.created_at)
-                }
-                let prev_comm = (this.state.jitoCommissionHistory!==null && i+1 < this.state.jitoCommissionHistory.length && this.state.jitoCommissionHistory[i+1].commission_bps != null)  ? this.state.jitoCommissionHistory[i+1].commission_bps/100+' %' : null
-                if(i==this.state.jitoCommissionHistory.length-1) prev_comm = 'N/A';
-
-                let row = (
-                    <tr key={'commission-history-row-'+i}>
-                        <th scope='row' className='fw-normal'>
-                            {formatted_date.toLocaleDateString(undefined,{dateStyle:'medium'})+' '+formatted_date.toLocaleTimeString()}
-                        </th>
-                        <td>
-                            {(prev_comm==null) ? "Not running Jito" : prev_comm}
-                        </td>
-                        <td>
-                            {(event.commission_bps==null) ? "Not running Jito" : event.commission_bps/100+" %"}
-                        </td>
-                    </tr>
-                )
-                rows.push(row)
-            })
-
-            return (
-                <table className='table table-sm text-light table-dark'>
-                    <thead>
-                        <tr>
-                            <th scope='col'>
-                                Observation time
-                            </th>
-                            <th scope='col'>
-                                Previous commission
-                            </th>
-                            <th scope='col'>
-                                New commission
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows}
-                    </tbody>
-                </table>
-            )
-        }
-        else {
-            return <div>No commission changes in our records for this validator.<br /><br />Our data begins from 28 Dec 2021.</div>
-        }
-        
+        return this.renderCommissionTimeline(this.state.jitoCommissionHistory || [], 'jito');
     }
 
     render() {
@@ -387,50 +380,6 @@ class ValidatorDetail extends React.Component<validatorDetailI,
                                 </span>
                             </ConditionalWrapper>
                         </div>
-                            <div className='row'>
-                                <div className='col'>
-                                        <div className='row mb-2'>
-                                            <div className='col col-md-2 fw-bold'>
-                                                Identity
-                                            </div>
-                                            <div className='col text-truncate'>
-
-                                                <OverlayTrigger
-                                                    placement="top"
-                                                    overlay={
-                                                        <Tooltip>
-                                                            Copy
-                                                        </Tooltip>
-                                                    } 
-                                                >
-                                                    <span className='pointer' onClick={() => {navigator.clipboard.writeText((this.state.validator!==null) ? this.state.validator.identity : '')}}>{this.state.validator.identity}</span>
-                                                </OverlayTrigger>
-                                            </div>
-                                        </div>
-                                </div>
-                            </div>
-                            <div className='row'>
-                                <div className='col'>
-                                    <div className='row mb-2'>
-                                            <div className='col col-md-2 fw-bold'>
-                                                Vote Account
-                                            </div>
-                                            <div className='col text-truncate'>
-
-                                                <OverlayTrigger
-                                                    placement="top"
-                                                    overlay={
-                                                        <Tooltip>
-                                                            Copy
-                                                        </Tooltip>
-                                                    } 
-                                                >
-                                                    <span className='pointer' onClick={() => {navigator.clipboard.writeText((this.state.validator!==null) ? this.state.validator.vote_identity : '')}}>{this.state.validator.vote_identity}</span>
-                                                </OverlayTrigger>
-                                            </div>
-                                        </div>
-                                </div>
-                            </div>
                             <div className='row'>
                                 <div className='col'>
                                     <div className='row mb-2'>
