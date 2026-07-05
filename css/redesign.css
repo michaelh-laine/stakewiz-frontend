@@ -71,15 +71,14 @@ body {
     align-items: center;
 }
 
-/* Force the Stakewiz brand to keep its natural, controlled height instead
-   of being scaled up to a full-width block on mobile (legacy CSS stacked
-   the container column-wise which made the logo huge). */
+/* Cap the Stakewiz brand height without over-constraining width — the SVG
+   has an explicit width attribute + a wide internal viewBox, so touching
+   max/min width crops the middle of the wordmark. Set only height and
+   let the browser scale width proportionally. */
 .navbar .navbar-brand svg,
 .stakewiz-logo {
     height: 48px !important;
     width: auto !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
     margin: 0 !important;
     display: block;
 }
@@ -94,6 +93,11 @@ body {
         align-items: center !important;
         justify-content: space-between !important;
         flex-wrap: nowrap;
+    }
+    .navbar .navbar-brand {
+        flex-shrink: 1;
+        min-width: 0;
+        overflow: hidden;
     }
     .navbar .navbar-brand svg,
     .stakewiz-logo {
@@ -2306,32 +2310,40 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.15rem;
+    gap: 0.4rem;
     min-width: 0;
+    padding: 0.1rem 0;
 }
 
 .sw-apy-total {
     color: var(--sw-text);
     font-variant-numeric: tabular-nums;
-    font-weight: 500;
-    font-size: 1rem;
-    line-height: 1.2;
+    font-weight: 600;
+    font-size: 1.05rem;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
 }
 
 .sw-apy-breakdown {
     display: inline-flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.35rem;
+    gap: 0.5rem;
     color: var(--sw-text-mute);
     font-size: 0.78rem;
     letter-spacing: 0.02em;
+    background: rgba(11, 16, 32, 0.45);
+    border: 1px solid var(--sw-border);
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    line-height: 1;
 }
 
 .sw-apy-part {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.3rem;
+    white-space: nowrap;
 }
 
 .sw-apy-part strong {
@@ -2346,7 +2358,8 @@ body {
 
 .sw-apy-sep {
     color: var(--sw-border-strong);
-    padding: 0 0.05rem;
+    padding: 0;
+    font-weight: 700;
 }
 
 /* MEV commission pill inside the Commission cell */
@@ -3320,10 +3333,15 @@ main > .container.p-relative {
     .validator-detail-box .row > .col > .row {
         grid-template-columns: minmax(8rem, 10rem) 1fr;
         gap: 0.85rem;
+        padding: 0.35rem 0;
     }
     .validator-detail-box .row > .col > .row > .col.fw-bold {
         font-size: 0.68rem;
         letter-spacing: 0.05em;
+    }
+    .validator-detail-box > .row + .row {
+        padding-top: 0.85rem;
+        margin-top: 0.85rem;
     }
     .sw-chart-wrap { min-height: 220px; margin: 0; }
     .sw-chart-wrap > div { height: 220px !important; }
