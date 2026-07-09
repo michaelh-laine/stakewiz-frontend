@@ -3,9 +3,11 @@
     right: 1rem;
 }
 
-.wallet-container .wallet-adapter-button {
+.wallet-container .wallet-adapter-button,
+.wallet-container .wallet-adapter-button-trigger {
     height: auto;
-    color: #16102e;
+    color: #16102e !important;
+    font-weight: 600;
     display: flex;
     align-items: center;
     border: 1px solid rgba(22, 16, 53, 0.16) !important;
@@ -13,13 +15,21 @@
 }
 
 .wallet-container .wallet-adapter-button-trigger {
-    background-color: unset !important;
+    background-color: #ffffff !important;
 }
 
-.wallet-container .wallet-adapter-button:not([disabled]):hover {
+.wallet-container .wallet-adapter-button:not([disabled]):hover,
+.wallet-container .wallet-adapter-button-trigger:not([disabled]):hover {
     background-color: #5907e6 !important;
     border-color: #5907e6 !important;
-    color: #fff;
+    color: #fff !important;
+}
+
+/* Address/label text inside the connected button */
+.wallet-container .wallet-adapter-button i,
+.wallet-container .wallet-adapter-button .wallet-adapter-button-start-icon,
+.wallet-container .wallet-adapter-button-trigger span {
+    color: inherit !important;
 }
 
 .wallet-adapter-modal-wrapper {

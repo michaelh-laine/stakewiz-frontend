@@ -190,7 +190,6 @@ main .vbox,
 }
 
 .navbar .navbar-brand {
-    filter: drop-shadow(0 4px 12px rgba(89, 7, 230, 0.2));
     display: inline-flex;
     align-items: center;
     padding: 0;
@@ -785,39 +784,22 @@ main .vbox,
     min-width: 0;
 }
 
-/* Text search — collapsed state (icon-only trigger) */
-.sw-search-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    background: var(--sw-bg-elev);
-    border: 1px solid var(--sw-border);
-    color: var(--sw-text-soft);
-    padding: 0.5rem 0.85rem;
-    border-radius: 999px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: all 0.15s ease;
-    flex-shrink: 0;
-}
-
-.sw-search-toggle:hover {
-    color: var(--sw-text);
-    border-color: var(--sw-accent);
-}
-
-.sw-search-toggle .bi {
-    font-size: 0.95rem;
-}
-
-/* Text search — expanded state */
-.sw-search-text-open {
+/* Text search — always-visible field that animates wider on focus.
+   Collapsed it sits at a fixed width alongside the goal chips; focusing it
+   expands to fill the row while the chips/refine slide away. */
+.sw-search-field {
     position: relative;
-    flex: 1;
     display: flex;
     align-items: center;
+    flex: 0 0 clamp(200px, 26%, 300px);
+    max-width: clamp(200px, 26%, 300px);
     min-width: 0;
+    transition: flex-basis 0.32s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sw-search-field-open {
+    flex-basis: 100%;
+    max-width: 100%;
 }
 
 .sw-search-icon {
@@ -826,28 +808,53 @@ main .vbox,
     color: var(--sw-text-mute);
     pointer-events: none;
     font-size: 0.95rem;
+    z-index: 1;
 }
 
-.sw-search-text-open .form-control {
+.sw-search-input-el {
     background: var(--sw-bg-elev) !important;
-    border: 1px solid var(--sw-border) !important;
+    border: 1px solid var(--sw-border-strong) !important;
     color: var(--sw-text) !important;
     height: 2.65rem;
+    width: 100%;
     padding-left: 2.5rem !important;
-    padding-right: 2.75rem !important;
+    padding-right: 2.5rem !important;
     border-radius: 999px !important;
     font-size: 0.9rem;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: background 0.15s ease;
     min-width: 0;
 }
 
-.sw-search-text-open .form-control:focus {
-    border-color: var(--sw-accent) !important;
-    box-shadow: 0 0 0 3px rgba(89, 7, 230, 0.16) !important;
+/* No active border/ring on focus — per design request. */
+.sw-search-input-el:focus,
+.sw-search-input-el:active {
+    border-color: var(--sw-border-strong) !important;
+    box-shadow: none !important;
+    outline: none !important;
+    background: var(--sw-bg-elev) !important;
 }
 
-.sw-search-text-open .form-control::placeholder {
+.sw-search-input-el::placeholder {
     color: var(--sw-text-mute);
+}
+
+/* Chips + refine cluster that collapses when the search field expands */
+.sw-search-rest {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    opacity: 1;
+    overflow: hidden;
+    transition: max-width 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+}
+
+.sw-search-rest-hidden {
+    max-width: 0;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .sw-search-clear {
@@ -1087,64 +1094,9 @@ main .vbox,
     display: flex;
     align-items: center;
     padding: 0 11px;
-    margin-top: 30px;
+    margin-top: 4px;
     touch-action: pan-y;
 }
-
-/* Live value bubbles above thumbs — always visible so users can see
-   exactly which value they're dragging. Positioned via the same %/px
-   calculation used by native range thumbs so they track precisely. */
-.sw-dual-bubble {
-    position: absolute;
-    bottom: calc(100% + 6px);
-    transform: translateX(-50%);
-    padding: 0.2rem 0.55rem;
-    border-radius: 999px;
-    background: #16102e;
-    border: 1px solid #16102e;
-    color: #ffffff;
-    font-size: 0.72rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    line-height: 1;
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 3;
-    box-shadow: 0 2px 6px rgba(22, 16, 53, 0.098);
-}
-
-.sw-dual-bubble-role {
-    color: var(--sw-text-mute);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-size: 0.6rem;
-    font-weight: 700;
-}
-
-.sw-dual-bubble::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: var(--sw-border-strong);
-    margin-top: 0;
-}
-
-.sw-dual-bubble-min {
-    border-color: rgba(89, 7, 230, 0.35);
-}
-
-.sw-dual-bubble-max {
-    border-color: rgba(124, 126, 225, 0.5);
-}
-
-.sw-dual-bubble-min::after { border-top-color: rgba(89, 7, 230, 0.35); }
-.sw-dual-bubble-max::after { border-top-color: rgba(124, 126, 225, 0.5); }
 
 .sw-dual-track {
     position: absolute;

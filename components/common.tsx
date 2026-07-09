@@ -126,7 +126,7 @@ const TopBar: FC = () => {
         <Navbar key='navbar' bg="none" variant="light" expand="lg">
           <Container className='navbar-flex-container'>
             <Navbar.Brand href="/" className='brand-box'>
-                <StakewizLogo fill="#16102e" className="stakewiz-logo" preserveAspectRatio="xMidYMid meet" />
+                <StakewizLogo fill="#16102e" className="stakewiz-logo" viewBox="0 0 250 79" preserveAspectRatio="xMidYMid meet" />
             </Navbar.Brand>
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav" className='position-relative justify-content-end align-items-center text-white'>

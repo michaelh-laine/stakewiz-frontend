@@ -236,24 +236,6 @@ const DualRange: FC<DualRangeProps> = ({ label, min, max, step, minValue, maxVal
                 <div className="sw-dual-track">
                     <div className="sw-dual-track-fill" style={{ left: minPct + '%', width: (maxPct - minPct) + '%' }} />
                 </div>
-                {/* Live value bubbles above each thumb — always visible so the
-                    user can see exactly what they're dragging. */}
-                <div
-                    className="sw-dual-bubble sw-dual-bubble-min"
-                    style={{ left: 'calc(' + minPct + '% + ' + (11 - (minPct * 22) / 100) + 'px)' }}
-                    aria-hidden="true"
-                >
-                    <span className="sw-dual-bubble-role">min</span>
-                    <span className="sw-dual-bubble-value">{fmt(minValue)}{unit}</span>
-                </div>
-                <div
-                    className="sw-dual-bubble sw-dual-bubble-max"
-                    style={{ left: 'calc(' + maxPct + '% + ' + (11 - (maxPct * 22) / 100) + 'px)' }}
-                    aria-hidden="true"
-                >
-                    <span className="sw-dual-bubble-role">max</span>
-                    <span className="sw-dual-bubble-value">{fmt(maxValue)}{unit}</span>
-                </div>
                 <input
                     type="range"
                     className={'sw-dual-thumb sw-dual-thumb-min' + (activeThumb === 'min' ? ' sw-dual-thumb-active' : '')}
@@ -480,70 +462,73 @@ const SearchBar: FC<SearchProps> = ({
     return (
         <div className="sw-search-shell" id="vlist-search">
             <div className="sw-search-bar">
-                {textOpen ? (
-                    <div className="sw-search-text-open">
-                        <i className="bi bi-search sw-search-icon" />
-                        <input
-                            ref={textInputRef}
-                            type="text"
-                            className="form-control"
-                            placeholder="Search by name, identity or paste a vote account…"
-                            value={filters.text}
-                            autoComplete="off"
-                            onChange={e => update({ text: e.target.value })}
-                            onKeyDown={e => { if (e.code === 'Escape') closeText(); }}
-                        />
-                        <button type="button" className="sw-search-clear" onClick={closeText} aria-label="Close search">
+                <div className={'sw-search-field' + (textOpen ? ' sw-search-field-open' : '')}>
+                    <i className="bi bi-search sw-search-icon" />
+                    <input
+                        ref={textInputRef}
+                        type="text"
+                        className="form-control sw-search-input-el"
+                        placeholder="Search validators…"
+                        value={filters.text}
+                        autoComplete="off"
+                        onFocus={() => setTextOpen(true)}
+                        onChange={e => update({ text: e.target.value })}
+                        onBlur={() => { if (!filters.text) setTextOpen(false); }}
+                        onKeyDown={e => { if (e.code === 'Escape') { closeText(); (e.target as HTMLInputElement).blur(); } }}
+                    />
+                    {filters.text ? (
+                        <button
+                            type="button"
+                            className="sw-search-clear"
+                            onMouseDown={e => e.preventDefault()}
+                            onClick={closeText}
+                            aria-label="Clear search"
+                        >
                             <i className="bi bi-x-lg" />
                         </button>
+                    ) : null}
+                </div>
+                <div className={'sw-search-rest' + (textOpen ? ' sw-search-rest-hidden' : '')} aria-hidden={textOpen}>
+                    <div className="sw-goal-scroll">
+                        {GOALS.map(g => {
+                            const active = filters.goal === g.id;
+                            const disabled = g.requiresWallet && onlyMineDisabled;
+                            const chip = (
+                                <button
+                                    key={g.id}
+                                    type="button"
+                                    disabled={disabled}
+                                    tabIndex={textOpen ? -1 : 0}
+                                    className={'sw-goal-chip' + (active ? ' sw-goal-chip-active' : '') + (disabled ? ' sw-goal-chip-disabled' : '')}
+                                    onClick={() => applyGoal(g.id)}
+                                >
+                                    <i className={'bi ' + g.icon} />
+                                    <span>{g.label}</span>
+                                </button>
+                            );
+                            return (
+                                <OverlayTrigger key={g.id} placement="top" overlay={
+                                    <Tooltip>
+                                        {disabled ? 'Connect your wallet to enable' : g.hint}
+                                    </Tooltip>
+                                }>
+                                    {chip}
+                                </OverlayTrigger>
+                            );
+                        })}
                     </div>
-                ) : (
-                    <>
-                        <OverlayTrigger placement="top" overlay={<Tooltip>Search by name or paste a pubkey</Tooltip>}>
-                            <button type="button" className="sw-search-toggle" onClick={() => setTextOpen(true)} aria-label="Open search">
-                                <i className="bi bi-search" />
-                                <span className="sw-search-toggle-label">Search</span>
-                            </button>
-                        </OverlayTrigger>
-                        <div className="sw-goal-scroll">
-                            {GOALS.map(g => {
-                                const active = filters.goal === g.id;
-                                const disabled = g.requiresWallet && onlyMineDisabled;
-                                const chip = (
-                                    <button
-                                        key={g.id}
-                                        type="button"
-                                        disabled={disabled}
-                                        className={'sw-goal-chip' + (active ? ' sw-goal-chip-active' : '') + (disabled ? ' sw-goal-chip-disabled' : '')}
-                                        onClick={() => applyGoal(g.id)}
-                                    >
-                                        <i className={'bi ' + g.icon} />
-                                        <span>{g.label}</span>
-                                    </button>
-                                );
-                                return (
-                                    <OverlayTrigger key={g.id} placement="top" overlay={
-                                        <Tooltip>
-                                            {disabled ? 'Connect your wallet to enable' : g.hint}
-                                        </Tooltip>
-                                    }>
-                                        {chip}
-                                    </OverlayTrigger>
-                                );
-                            })}
-                        </div>
-                        <OverlayTrigger placement="top" overlay={<Tooltip>{refineOpen ? 'Hide advanced filters' : 'Show advanced filters'}</Tooltip>}>
-                            <button
-                                type="button"
-                                className={'sw-refine-btn' + (refineOpen ? ' sw-refine-btn-active' : '')}
-                                onClick={() => setRefineOpen(o => !o)}
-                            >
-                                <i className="bi bi-sliders" />
-                                <span>Refine</span>
-                            </button>
-                        </OverlayTrigger>
-                    </>
-                )}
+                    <OverlayTrigger placement="top" overlay={<Tooltip>{refineOpen ? 'Hide advanced filters' : 'Show advanced filters'}</Tooltip>}>
+                        <button
+                            type="button"
+                            tabIndex={textOpen ? -1 : 0}
+                            className={'sw-refine-btn' + (refineOpen ? ' sw-refine-btn-active' : '')}
+                            onClick={() => setRefineOpen(o => !o)}
+                        >
+                            <i className="bi bi-sliders" />
+                            <span>Refine</span>
+                        </button>
+                    </OverlayTrigger>
+                </div>
             </div>
 
             <div className="sw-search-meta-row">
