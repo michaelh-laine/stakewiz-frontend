@@ -117,8 +117,7 @@ class ValidatorListing extends React.Component<ValidatorListingI, {}> {
     }
   
     updateWizModalVisibility(show:boolean,validator=null) {
-      console.log(show);
-  
+
         if(validator==null && this.props.state.wizValidator!=null) {
             validator = this.props.state.wizValidator;
         }
@@ -504,13 +503,13 @@ const ValidatorBox: FC<ValidatorBoxPropsI> = ({validator,clusterStats,showWizMod
             <div className={'d-flex my-2' + (showListView?' text-left flex-column':' text-center')}>
                 <div className={'flex-grow-1'}>
                     <span className={'pointer no-underline flex-nowrap '+(showListView?'':' me-3')} onClick={() => showWizModal()}>
-                            <WizEmblem fill="#fff" width="40px" height="40px" /> Score
+                            <WizEmblem fill="#16102e" width="40px" height="40px" /> Score
                     </span>
                     <span className='ms-2'>{validator.wiz_score}%</span>
                 </div>
                 <div className='flex-grow-1'>
                     <span className={'me-3'}>
-                        <WizEmblem fill="#fff" width="40px" height="40px" /> Rank
+                        <WizEmblem fill="#16102e" width="40px" height="40px" /> Rank
                     </span>
                     <span className='ms-2'>{ordinal(validator.rank)}</span>
                 </div>

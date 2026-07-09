@@ -2,13 +2,13 @@
 // Use via: <Chart options={{ ...getChartOptions(...) }} />
 
 export const SW_CHART_COLORS = {
-    accent: '#4bd6ff',
-    accentSoft: '#7c5cff',
-    warn: '#ffb547',
-    danger: '#ff6b7a',
-    text: '#e6ecff',
-    textMute: '#8a97c3',
-    gridline: 'rgba(148, 163, 216, 0.14)'
+    accent: '#5907e6',
+    accentSoft: '#7c7ee1',
+    warn: '#d97706',
+    danger: '#d92638',
+    text: '#16102e',
+    textMute: '#6f6a85',
+    gridline: 'rgba(22, 16, 53, 0.08)'
 };
 
 export interface ChartThemeOptions {

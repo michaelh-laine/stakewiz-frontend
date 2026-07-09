@@ -181,7 +181,7 @@ export const Stakes: FC<{userPubkey: PublicKey, connection: Connection, connecte
                                 options={{
                                     backgroundColor: 'none',
                                     curveType: "function",
-                                    colors: ['#fff', '#fff', '#fff'],
+                                    colors: ['#5907e6', '#a452f0', '#7c7ee1'],
                                     lineWidth: 2,
                                     pointsVisible: true,
                                     vAxis: {
@@ -189,7 +189,7 @@ export const Stakes: FC<{userPubkey: PublicKey, connection: Connection, connecte
                                             color: 'transparent'
                                         },
                                         textStyle: {
-                                            color: '#fff'
+                                            color: '#6f6a85'
                                         },
                                         format: '#.#%',
                                         baseLine: 0,
@@ -199,7 +199,7 @@ export const Stakes: FC<{userPubkey: PublicKey, connection: Connection, connecte
                                             color: 'transparent'
                                         },
                                         textStyle: {
-                                            color: '#fff'
+                                            color: '#6f6a85'
                                         }
                                     },
                                     chartArea: {

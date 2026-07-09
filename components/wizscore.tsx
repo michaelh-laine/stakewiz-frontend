@@ -135,7 +135,7 @@ class WizScoreBody extends React.Component<{
         return (
             <div className="d-flex flex-grow-1 justify-content-center text-center text-white mx-5 p-3 text-italic scorecard-wiz-score align-items-center ms-2">
                     
-                        <div className={'me-2 '}><WizEmblem fill="#fff" width="40px" height="40px" /> Score</div> 
+                        <div className={'me-2 '}><WizEmblem fill="#16102e" width="40px" height="40px" /> Score</div> 
                         <div>
                             <span id="scorecard-wizscore">
                             {' '+new Intl.NumberFormat().format(Number(this.props.validator.wiz_score.toFixed(2)))+'% '}
@@ -640,25 +640,25 @@ class WizScoreChart extends React.Component<{
                         options={{
                             backgroundColor: 'transparent',
                             curveType: 'function',
-                            colors: ['#4bd6ff'],
+                            colors: ['#5907e6'],
                             lineWidth: 2,
                             legend: { position: 'none' },
                             interpolateNulls: true,
                             vAxis: {
-                                gridlines: { color: 'rgba(148, 163, 216, 0.14)', count: 5 },
+                                gridlines: { color: 'rgba(22, 16, 53, 0.08)', count: 5 },
                                 minorGridlines: { color: 'transparent' },
-                                textStyle: { color: '#8a97c3', fontSize: 11, fontName: 'system-ui, sans-serif' },
+                                textStyle: { color: '#6f6a85', fontSize: 11, fontName: 'system-ui, sans-serif' },
                                 format: 'percent',
-                                baselineColor: 'rgba(148, 163, 216, 0.14)'
+                                baselineColor: 'rgba(22, 16, 53, 0.08)'
                             },
                             hAxis: {
                                 gridlines: { color: 'transparent' },
                                 minorGridlines: { color: 'transparent' },
-                                textStyle: { color: '#8a97c3', fontSize: 11, fontName: 'system-ui, sans-serif' },
-                                baselineColor: 'rgba(148, 163, 216, 0.14)'
+                                textStyle: { color: '#6f6a85', fontSize: 11, fontName: 'system-ui, sans-serif' },
+                                baselineColor: 'rgba(22, 16, 53, 0.08)'
                             },
                             trendlines: {
-                                0: { color: '#ffb547', type: 'exponential', lineWidth: 2, opacity: 0.85 }
+                                0: { color: '#d97706', type: 'exponential', lineWidth: 2, opacity: 0.85 }
                             },
                             chartArea: { top: 16, left: 52, right: 16, bottom: 32 }
                         }}

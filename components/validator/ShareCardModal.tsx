@@ -45,27 +45,27 @@ const drawCard = async (canvas: HTMLCanvasElement, validator: validatorI) => {
 
     // Base gradient
     const bg = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT);
-    bg.addColorStop(0, '#0b1020');
-    bg.addColorStop(0.5, '#101733');
-    bg.addColorStop(1, '#0b1020');
+    bg.addColorStop(0, '#f5f4f8');
+    bg.addColorStop(0.5, '#ffffff');
+    bg.addColorStop(1, '#f5f4f8');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
     // Radial glow accents
     const glow1 = ctx.createRadialGradient(180, 100, 0, 180, 100, 500);
-    glow1.addColorStop(0, 'rgba(124, 92, 255, 0.35)');
-    glow1.addColorStop(1, 'rgba(124, 92, 255, 0)');
+    glow1.addColorStop(0, 'rgba(124, 126, 225, 0.18)');
+    glow1.addColorStop(1, 'rgba(124, 126, 225, 0)');
     ctx.fillStyle = glow1;
     ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
     const glow2 = ctx.createRadialGradient(1050, 550, 0, 1050, 550, 500);
-    glow2.addColorStop(0, 'rgba(75, 214, 255, 0.28)');
-    glow2.addColorStop(1, 'rgba(75, 214, 255, 0)');
+    glow2.addColorStop(0, 'rgba(89, 7, 230, 0.10)');
+    glow2.addColorStop(1, 'rgba(89, 7, 230, 0)');
     ctx.fillStyle = glow2;
     ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
     // Brand ribbon (top)
-    ctx.fillStyle = '#4bd6ff';
+    ctx.fillStyle = '#5907e6';
     ctx.font = '600 22px system-ui, -apple-system, "Segoe UI", sans-serif';
     ctx.textBaseline = 'top';
     ctx.fillText('STAKEWIZ · SOLANA VALIDATOR PROFILE', 60, 50);
@@ -79,13 +79,13 @@ const drawCard = async (canvas: HTMLCanvasElement, validator: validatorI) => {
     ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
-    ctx.fillStyle = '#131b39';
+    ctx.fillStyle = '#efedf6';
     ctx.fillRect(logoX, logoY, logoSize, logoSize);
     const logo = await loadImage(validator.image || '/images/validator-image-na.png');
     if (logo) {
         ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
     } else {
-        ctx.fillStyle = '#4bd6ff';
+        ctx.fillStyle = '#5907e6';
         ctx.font = '700 60px system-ui, sans-serif';
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'center';
@@ -98,12 +98,12 @@ const drawCard = async (canvas: HTMLCanvasElement, validator: validatorI) => {
     // Logo border ring
     ctx.beginPath();
     ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 3, 0, Math.PI * 2);
-    ctx.strokeStyle = validator.delinquent ? '#ff6b7a' : '#4bd6ff';
+    ctx.strokeStyle = validator.delinquent ? '#d92638' : '#5907e6';
     ctx.lineWidth = 3;
     ctx.stroke();
 
     // Name
-    ctx.fillStyle = '#e6ecff';
+    ctx.fillStyle = '#16102e';
     ctx.font = '700 68px system-ui, -apple-system, "Segoe UI", sans-serif';
     ctx.textBaseline = 'top';
     const displayName = (validator.name && validator.name.length > 0) ? validator.name : validator.vote_identity.slice(0, 12) + '…';
@@ -111,18 +111,18 @@ const drawCard = async (canvas: HTMLCanvasElement, validator: validatorI) => {
 
     // Rank + Wiz score line
     ctx.font = '500 30px system-ui, sans-serif';
-    ctx.fillStyle = '#8a97c3';
+    ctx.fillStyle = '#6f6a85';
     ctx.fillText('Ranked ' + ordinal(validator.rank) + ' on Stakewiz', 250, 230);
 
     if (validator.is_jito) {
         // Jito badge
         drawRoundedRect(ctx, 250, 285, 130, 42, 21);
-        ctx.fillStyle = 'rgba(255, 181, 71, 0.15)';
+        ctx.fillStyle = 'rgba(217, 119, 6, 0.12)';
         ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 181, 71, 0.55)';
+        ctx.strokeStyle = 'rgba(217, 119, 6, 0.45)';
         ctx.lineWidth = 1.5;
         ctx.stroke();
-        ctx.fillStyle = '#ffb547';
+        ctx.fillStyle = '#b45309';
         ctx.font = '700 20px system-ui, sans-serif';
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'center';
@@ -140,18 +140,18 @@ const drawCard = async (canvas: HTMLCanvasElement, validator: validatorI) => {
     const kpiH = 170;
 
     const kpis: { label: string; value: string; color: string }[] = [
-        { label: 'WIZ SCORE', value: validator.wiz_score + '%', color: '#ffb547' },
-        { label: 'TRUEAPY', value: validator.total_apy + '%', color: '#4bd6ff' },
-        { label: 'COMMISSION', value: validator.commission + '%', color: '#7c5cff' },
-        { label: 'SKIP RATE', value: validator.skip_rate.toFixed(1) + '%', color: '#4ade80' }
+        { label: 'WIZ SCORE', value: validator.wiz_score + '%', color: '#b45309' },
+        { label: 'TRUEAPY', value: validator.total_apy + '%', color: '#5907e6' },
+        { label: 'COMMISSION', value: validator.commission + '%', color: '#7c7ee1' },
+        { label: 'SKIP RATE', value: validator.skip_rate.toFixed(1) + '%', color: '#15803d' }
     ];
 
     kpis.forEach((kpi, i) => {
         const x = kpiPad + i * (kpiW + kpiGap);
         drawRoundedRect(ctx, x, kpiTop, kpiW, kpiH, 18);
-        ctx.fillStyle = 'rgba(19, 27, 57, 0.9)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
         ctx.fill();
-        ctx.strokeStyle = 'rgba(148, 163, 216, 0.14)';
+        ctx.strokeStyle = 'rgba(22, 16, 53, 0.10)';
         ctx.lineWidth = 1;
         ctx.stroke();
 
@@ -160,23 +160,23 @@ const drawCard = async (canvas: HTMLCanvasElement, validator: validatorI) => {
         ctx.fillStyle = kpi.color;
         ctx.fill();
 
-        ctx.fillStyle = '#8a97c3';
+        ctx.fillStyle = '#6f6a85';
         ctx.font = '600 18px system-ui, sans-serif';
         ctx.textBaseline = 'top';
         ctx.fillText(kpi.label, x + 22, kpiTop + 28);
 
-        ctx.fillStyle = '#e6ecff';
+        ctx.fillStyle = '#16102e';
         ctx.font = '700 48px system-ui, sans-serif';
         ctx.fillText(kpi.value, x + 22, kpiTop + 68);
     });
 
     // Footer
-    ctx.fillStyle = '#8a97c3';
+    ctx.fillStyle = '#6f6a85';
     ctx.font = '500 22px system-ui, sans-serif';
     ctx.textBaseline = 'top';
     ctx.fillText('stakewiz.com/validator/' + validator.vote_identity.slice(0, 12) + '…', 60, CARD_HEIGHT - 60);
     ctx.textAlign = 'end';
-    ctx.fillStyle = '#4bd6ff';
+    ctx.fillStyle = '#5907e6';
     ctx.fillText('Stake with confidence.', CARD_WIDTH - 60, CARD_HEIGHT - 60);
     ctx.textAlign = 'start';
 };

@@ -2,9 +2,11 @@ import React, { FC, useState } from 'react';
 import Link from 'next/link';
 import ordinal from 'ordinal';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { validatorI } from './interfaces';
 import { RenderImage, RenderName } from './common';
 import ShareCardModal from './ShareCardModal';
+import { useValidatorAuth } from '../../lib/validatorAuth';
 
 interface ProfileHeaderProps {
     validator: validatorI;
@@ -35,12 +37,16 @@ const KpiTile: FC<{ label: string; value: string; help?: string }> = ({ label, v
 const ProfileHeader: FC<ProfileHeaderProps> = ({ validator, connected, onStake, onAlert }) => {
     const [showShare, setShowShare] = useState<boolean>(false);
     const [claimDismissed, setClaimDismissed] = useState<boolean>(false);
+    const { setVisible: setWalletModalVisible } = useWalletModal();
+    const { connectedPubkey, signIn, signOut, signingIn, error: authError, isOwnerOf, canSignInAsOwnerOf } = useValidatorAuth();
 
     const xHandle = validator?.website && /(twitter\.com|x\.com)/i.test(validator.website)
         ? validator.website.replace(/^https?:\/\/(www\.)?(twitter|x)\.com\//i, '@').replace(/\/$/, '')
         : null;
 
-    const isClaimed = false; // Wire this to API when profile-ownership ships.
+    const isOwner = isOwnerOf(validator);           // signed in with the owner wallet
+    const canVerify = canSignInAsOwnerOf(validator); // owner wallet connected, not yet signed in
+    const isClaimed = isOwner;
 
     return (
         <>
@@ -148,7 +154,48 @@ const ProfileHeader: FC<ProfileHeaderProps> = ({ validator, connected, onStake, 
                 </div>
             </section>
 
-            {!isClaimed && !claimDismissed ? (
+            {isOwner ? (
+                <div className="sw-owner-strip">
+                    <div>
+                        <div className="sw-owner-strip-title">
+                            <i className="bi bi-patch-check-fill" /> You manage this profile
+                        </div>
+                        <div className="sw-owner-strip-sub">
+                            Signed in as the profile owner — you can post updates from the Updates section below.
+                        </div>
+                    </div>
+                    <div className="sw-owner-strip-actions">
+                        <span className="sw-owner-pill">
+                            <i className="bi bi-wallet2" /> {shorten(connectedPubkey || '')}
+                        </span>
+                        <button type="button" className="sw-owner-signout" onClick={signOut}>
+                            Sign out
+                        </button>
+                    </div>
+                </div>
+            ) : canVerify ? (
+                <div className="sw-owner-strip">
+                    <div>
+                        <div className="sw-owner-strip-title">
+                            <i className="bi bi-shield-lock" /> This profile is registered to your connected wallet
+                        </div>
+                        <div className="sw-owner-strip-sub">
+                            Sign a message (free, no transaction) to verify ownership and unlock profile tools.
+                        </div>
+                    </div>
+                    <div className="sw-owner-strip-actions">
+                        <button
+                            type="button"
+                            className="btn sw-btn-primary sw-claim-cta"
+                            onClick={() => signIn()}
+                            disabled={signingIn}
+                        >
+                            <i className="bi bi-pen me-2" /> {signingIn ? 'Waiting for wallet…' : 'Verify ownership'}
+                        </button>
+                    </div>
+                    {authError ? <div className="sw-owner-error">{authError}</div> : null}
+                </div>
+            ) : !claimDismissed ? (
                 <div className="sw-claim-strip">
                     <div className="sw-claim-copy">
                         <div className="sw-claim-title">
@@ -156,13 +203,21 @@ const ProfileHeader: FC<ProfileHeaderProps> = ({ validator, connected, onStake, 
                             {validator.name ? <strong>{validator.name}</strong> : 'this validator'}?
                         </div>
                         <div className="sw-claim-sub">
-                            Claim your profile to post updates, add a bio, link your socials and respond to stakers.
+                            {connectedPubkey
+                                ? 'Connect your validator’s designated owner wallet to claim this profile and post updates for your stakers.'
+                                : 'Connect the wallet registered as this profile’s owner to claim it, post updates, and respond to stakers.'}
                         </div>
                     </div>
                     <div className="sw-claim-actions">
-                        <button type="button" className="btn sw-btn-primary sw-claim-cta">
-                            <i className="bi bi-patch-check me-2" /> Claim profile
-                        </button>
+                        {!connectedPubkey ? (
+                            <button
+                                type="button"
+                                className="btn sw-btn-primary sw-claim-cta"
+                                onClick={() => setWalletModalVisible(true)}
+                            >
+                                <i className="bi bi-wallet2 me-2" /> Connect wallet
+                            </button>
+                        ) : null}
                         <button
                             type="button"
                             className="sw-claim-dismiss"

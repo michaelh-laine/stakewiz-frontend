@@ -66,9 +66,9 @@ export const DelinquencyChart: FC<{vote_identity: string, first_epoch: number}> 
                     values={delinquencies}
                     until={until}
                     start={startDate}
-                    weekLabelAttributes={{ style: { fill: '#8a97c3', fontSize: 10, fontFamily: 'system-ui, sans-serif' } }}
-                    monthLabelAttributes={{ style: { fill: '#8a97c3', fontSize: 11, fontFamily: 'system-ui, sans-serif' } }}
-                    panelColors={['#1c264a', '#4ade80', '#ffcc4d', '#ffb547', '#ff8a3d', '#ff6b7a']}
+                    weekLabelAttributes={{ style: { fill: '#6f6a85', fontSize: 10, fontFamily: 'system-ui, sans-serif' } }}
+                    monthLabelAttributes={{ style: { fill: '#6f6a85', fontSize: 11, fontFamily: 'system-ui, sans-serif' } }}
+                    panelColors={['#e7e4f2', '#16a34a', '#f59e0b', '#d97706', '#ea580c', '#d92638']}
                     panelAttributes={{ rx: 2, ry: 2, style: { stroke: 'transparent' } }}
                 />
             </div>

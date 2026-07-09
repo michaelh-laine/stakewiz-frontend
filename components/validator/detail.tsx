@@ -271,7 +271,6 @@ class ValidatorDetail extends React.Component<validatorDetailI,
         const solflareEnabled = checkSolflareEnabled(this.props.userPubkey);
 
         if(this.state.validator!=null) {
-            console.log(this.state.validator)
 
             let updated_at = new Date(this.state.validator.updated_at);
 
