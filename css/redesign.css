@@ -102,6 +102,24 @@ main .border-white,
 .modal .border-white {
     border-color: var(--sw-border) !important;
 }
+/* Bare Bootstrap badges default to white text (invisible on light). Give
+   them ink text; coloured-background badges below re-assert white. */
+main .badge,
+.modal .badge {
+    color: var(--sw-text-soft);
+}
+main .badge.bg-danger, main .badge.bg-success, main .badge.bg-primary,
+.modal .badge.bg-danger, .modal .badge.bg-success, .modal .badge.bg-primary {
+    color: #ffffff !important;
+}
+/* JITO / info-bordered pill on validator cards */
+main .badge.border-info,
+main .badge.border-warning {
+    color: var(--sw-text-soft) !important;
+    background: var(--sw-bg-card-2) !important;
+}
+main .badge.border-info { border-color: rgba(89, 7, 230, 0.3) !important; }
+main .badge.border-warning { border-color: rgba(217, 119, 6, 0.45) !important; }
 main .badge.bg-dark, main .badge.bg-secondary,
 .modal .badge.bg-dark, .modal .badge.bg-secondary {
     background: var(--sw-bg-card-2) !important;
@@ -113,6 +131,14 @@ main .badge.bg-light,
     background: var(--sw-bg-card-2) !important;
     color: var(--sw-text-soft) !important;
 }
+/* Bootstrap semantic text colours are tuned for dark UIs; remap to
+   accessible tones for light surfaces (used across stake dialogs, etc). */
+main .text-warning, .modal .text-warning { color: var(--sw-warn) !important; }
+main .text-success, .modal .text-success { color: var(--sw-success) !important; }
+main .text-danger, .modal .text-danger { color: var(--sw-danger) !important; }
+main .text-info, .modal .text-info { color: var(--sw-accent) !important; }
+main .text-muted, .modal .text-muted { color: var(--sw-text-mute) !important; }
+
 main a,
 .modal a {
     color: var(--sw-accent);
@@ -270,7 +296,6 @@ main .vbox,
     background: var(--sw-gradient-cta) !important;
     border-color: transparent !important;
     color: #ffffff !important;
-    transform: translateY(-1px);
 }
 
 /* =========================================================
@@ -436,7 +461,6 @@ main .vbox,
 }
 
 .sw-btn-primary:hover {
-    transform: translateY(-1px);
     box-shadow: 0 16px 44px rgba(89, 7, 230, 0.175);
 }
 
@@ -598,8 +622,7 @@ main .vbox,
 }
 
 .sw-highlight-card:hover {
-    transform: translateY(-3px);
-    border-color: var(--sw-border-strong);
+    border-color: var(--sw-accent);
     box-shadow: var(--sw-shadow);
 }
 
@@ -1745,8 +1768,7 @@ main .vbox,
 }
 
 .sw-wizard-card:hover {
-    transform: translateY(-3px);
-    border-color: var(--sw-border-strong);
+    border-color: var(--sw-accent);
     box-shadow: var(--sw-shadow);
 }
 
@@ -1836,13 +1858,13 @@ main .vbox,
     background: var(--sw-bg-card) !important;
     border-color: var(--sw-border) !important;
     border-radius: var(--sw-radius) !important;
-    transition: border-color 0.15s ease, transform 0.15s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
     box-shadow: var(--sw-shadow-sm);
 }
 
 .validator-flex-container:hover {
-    border-color: var(--sw-border-strong) !important;
-    transform: translateY(-2px);
+    border-color: var(--sw-accent) !important;
+    box-shadow: var(--sw-shadow);
 }
 
 .card-light { background: var(--sw-bg-card) !important; }
@@ -2451,7 +2473,6 @@ main .vbox,
 
 .sw-recent-chip:hover {
     border-color: var(--sw-accent);
-    transform: translateY(-1px);
     text-decoration: none !important;
 }
 
@@ -3850,7 +3871,6 @@ main > .container.p-relative {
     background: var(--sw-gradient-cta) !important;
     color: #ffffff !important;
     border-color: transparent !important;
-    transform: translateY(-1px);
     box-shadow: var(--sw-shadow-glow);
 }
 
@@ -4151,6 +4171,19 @@ main > .container.p-relative {
 
 .navbar .epoch-progress .progress-bar {
     background: var(--sw-gradient-cta) !important;
+}
+
+/* Centre the epoch progress across the navbar instead of letting it collapse
+   against the logo. It's absolutely positioned (start-0) with no width, so
+   justify-content-center had nothing to centre within. */
+@media (min-width: 992px) {
+    .navbar .epoch-progress-container {
+        left: 0 !important;
+        right: auto !important;
+        width: 340px !important;
+        margin-left: 2rem;
+        pointer-events: none;
+    }
 }
 
 .navbar .nav-discord {
