@@ -50,7 +50,7 @@ class Header extends React.Component<HeaderProps, {}> {
                 <meta property="og:description" content="Validator analytics, monitoring and alerting for Solana." />
                 <meta property="og:url" content="https://stakewiz.com" />
                 <meta property="og:image" content="https://stakewiz.com/images/favicon-new.png" />
-                <link rel="icon" href="/images/favicon-new.png" />.
+                <link rel="icon" href="/images/favicon-new.png" />
             </Head>
         )
     }
@@ -123,10 +123,10 @@ const TopBar: FC = () => {
             gtag('config', 'G-L7C5EZ0C4F');
           `}
         </Script>
-        <Navbar key='navbar' bg="none" variant="dark" expand="lg">
+        <Navbar key='navbar' bg="none" variant="light" expand="lg">
           <Container className='navbar-flex-container'>
             <Navbar.Brand href="/" className='brand-box'>
-                <StakewizLogo fill="#fff" height="80px" width="250px" />
+                <StakewizLogo fill="#16102e" className="stakewiz-logo" viewBox="0 0 250 79" preserveAspectRatio="xMidYMid meet" />
             </Navbar.Brand>
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
             <Navbar.Collapse id="basic-navbar-nav" className='position-relative justify-content-end align-items-center text-white'>

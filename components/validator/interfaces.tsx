@@ -34,6 +34,9 @@ export interface validatorI {
     ip_asn: string;
     ip_org: string;
     withdraw_authority: string;
+    /** Authorized profile owner (v2 API). Until the API ships this field the
+     *  frontend falls back to a hard-coded test pubkey — see lib/validatorAuth. */
+    owner_pubkey?: string;
     wiz_score_id: number;
     ignore: boolean;
     vote_success: number;

@@ -5,6 +5,7 @@ import { getStakeAccounts, StakeStatus, getStakeStatus, getRewards } from './com
 import { ValidatorContext } from '../validator/validatorhook';
 import { getAllEpochHistory, getClusterStats, Spinner} from '../common'
 import { RenderImage, RenderName } from '../validator/common'
+import StakesSummary from './StakesSummary'
 import { Alert, Form, InputGroup, Modal, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { addMeta, closeStake, deactivateStake, delegateStake } from "./transactions";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -180,7 +181,7 @@ export const Stakes: FC<{userPubkey: PublicKey, connection: Connection, connecte
                                 options={{
                                     backgroundColor: 'none',
                                     curveType: "function",
-                                    colors: ['#fff', '#fff', '#fff'],
+                                    colors: ['#5907e6', '#a452f0', '#7c7ee1'],
                                     lineWidth: 2,
                                     pointsVisible: true,
                                     vAxis: {
@@ -188,7 +189,7 @@ export const Stakes: FC<{userPubkey: PublicKey, connection: Connection, connecte
                                             color: 'transparent'
                                         },
                                         textStyle: {
-                                            color: '#fff'
+                                            color: '#6f6a85'
                                         },
                                         format: '#.#%',
                                         baseLine: 0,
@@ -198,7 +199,7 @@ export const Stakes: FC<{userPubkey: PublicKey, connection: Connection, connecte
                                             color: 'transparent'
                                         },
                                         textStyle: {
-                                            color: '#fff'
+                                            color: '#6f6a85'
                                         }
                                     },
                                     chartArea: {
@@ -931,29 +932,15 @@ export const Stakes: FC<{userPubkey: PublicKey, connection: Connection, connecte
         return (
             <React.Fragment>
                 [
-                <div className='d-flex text-white mx-3 my-stakes-title-bar'>
-                    <div className='fs-5 flex-grow-1'>
-                        {(connected) ? 'Manage stake accounts' : 'View stake accounts'}
-                    </div>
-                    <div className='flex-shrink-1 align-items-center lh-1 my-stakes-connected-wallet-badge'>
-                        <div className='badge bg-light text-dark d-flex align-items-center'>
-                            {(connected) ? <span className='text-success'>Connected to</span> : <span className='text-success'>Viewing</span>} 
-                            <span className='px-1 text-truncate'>{activePubkey.toString()}</span>
-                            <OverlayTrigger
-                                placement="top"
-                                overlay={
-                                    <Tooltip>
-                                        {(connected) ? 'Disconnect' : 'Close wallet'}
-                                    </Tooltip>
-                                } 
-                            >
-                                <span className='pointer' onClick={() => unsetUserPublicKey()}>
-                                    <i className='bi bi-x fs-6 fw-bold'></i>
-                                </span>
-                            </OverlayTrigger>
-                        </div>
-                    </div>
-                </div>
+                <StakesSummary
+                    key='stakesSummary'
+                    stakes={stakes}
+                    validatorList={validatorList}
+                    epoch={epoch}
+                    walletPubkey={activePubkey.toString()}
+                    connected={connected}
+                    onDisconnect={() => unsetUserPublicKey()}
+                />,
                 <div className='d-flex flex-wrap justify-content-center' key='my-stakes'>
                     {renderResult}
                 </div>,

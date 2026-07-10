@@ -4,12 +4,13 @@ import config from '../../config.json'
 import { Spinner } from '../common'
 import Chart from "react-google-charts";
 import * as browser from 'lib/browser';
+import { getChartOptions, CHART_HEIGHT, SW_CHART_COLORS } from './chartTheme';
 
 const API_URL = process.env.API_BASE_URL;
 
 export const SkipRateChart: FC<{vote_identity: string}> = ({vote_identity}) => {
     const [allScores, setAllScores] = useState(null);
-    
+
     useEffect(() => {
         axios(API_URL+config.API_ENDPOINTS.validator_skip_rate+"/"+vote_identity+"?limit=2000", {
             headers: {'Content-Type':'application/json'}
@@ -17,7 +18,6 @@ export const SkipRateChart: FC<{vote_identity: string}> = ({vote_identity}) => {
             .then(response => {
             let json = response.data;
 
-            
             if(json.length>0) {
 
                 let scores = [];
@@ -32,7 +32,7 @@ export const SkipRateChart: FC<{vote_identity: string}> = ({vote_identity}) => {
                         if(isSafari){
                             let timeZone = json[i].created_at.slice(-3)+':00';
                             scores.push([new Date(json[i].created_at.substring(0, 19).replace(/-/g, "/")+timeZone), parseFloat(json[i].skip_rate)/100]);
-                        }else{                
+                        }else{
                             scores.push([new Date(json[i].created_at), parseFloat(json[i].skip_rate)/100]);
                         }
                 }
@@ -47,50 +47,25 @@ export const SkipRateChart: FC<{vote_identity: string}> = ({vote_identity}) => {
 
 
     if(allScores==null) {
-        
         return <Spinner />
-    
     }
     else {
         return (
-            <Chart 
-                chartType='LineChart'
-                width="100%"
-                height="20rem"
-                data={allScores}
-                options={{
-                    backgroundColor: 'none',
-                    colors: ['#fff', '#fff', '#fff'],
-                    lineWidth: 2,
-                    legend:{
-                        position:'none'
-                    },
-                    vAxis: {
-                        gridlines: {
-                            color: 'transparent'
-                        },
-                        textStyle: {
-                            color: '#fff'
-                        },
-                        format: 'percent'
-                    },
-                    hAxis: {
-                        gridlines: {
-                            color: 'transparent'
-                        },
-                        textStyle: {
-                            color: '#fff'
-                        }
-                    },
-                    chartArea: {
-                        top: 20,
-                        left: 50,
-                        width:'100%',
-                        height:'80%'
-                    },
-                    allowAsync: true
-                }}
-            />
+            <div className="sw-chart-wrap">
+                <Chart
+                    chartType='LineChart'
+                    width="100%"
+                    height={CHART_HEIGHT}
+                    data={allScores}
+                    options={getChartOptions({
+                        colors: [SW_CHART_COLORS.warn],
+                        vAxisFormat: 'percent',
+                        vAxisBaseline: 0,
+                        vAxisMin: 0,
+                        vAxisMax: 0.25
+                    })}
+                />
+            </div>
         )
     }
 }

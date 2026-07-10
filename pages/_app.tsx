@@ -16,13 +16,24 @@ import { AppProps } from 'next/app';
 import { FC, useMemo,  useEffect, useState, useContext } from 'react';
 import { ValidatorContext } from '../components/validator/validatorhook';
 import { ValidatorData } from '../components/common';
+import { ValidatorAuthProvider } from '../lib/validatorAuth';
 import config from '../config.json';
 
 require('@solana/wallet-adapter-react-ui/styles.css');
 require('bootstrap/dist/css/bootstrap.css');
 require('react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css')
+// Brand typography: Space Grotesk (display, closest web face to Tomato
+// Grotesk) + Roboto (body, the brand's sanctioned Helvetica Neue alternative)
+require('@fontsource/space-grotesk/400.css');
+require('@fontsource/space-grotesk/500.css');
+require('@fontsource/space-grotesk/600.css');
+require('@fontsource/space-grotesk/700.css');
+require('@fontsource/roboto/400.css');
+require('@fontsource/roboto/500.css');
+require('@fontsource/roboto/700.css');
 require('../css/wallet.css')
 require("../css/style.css");
+require("../css/redesign.css");
 
 
 const Stakewiz: FC<AppProps> = ({ Component, pageProps }) => {
@@ -80,7 +91,9 @@ const Stakewiz: FC<AppProps> = ({ Component, pageProps }) => {
       <ConnectionProvider endpoint={endpoint}>
           <WalletProvider wallets={wallets} autoConnect>
               <WalletModalProvider>
-                  <Component {...pageProps} />
+                  <ValidatorAuthProvider>
+                      <Component {...pageProps} />
+                  </ValidatorAuthProvider>
               </WalletModalProvider>
           </WalletProvider>
       </ConnectionProvider>
