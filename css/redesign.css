@@ -978,15 +978,18 @@ main .vbox,
 
 .sw-result-count {
     display: inline-flex;
-    align-items: baseline;
-    gap: 0.35rem;
-    color: var(--sw-text-soft);
-    font-size: 0.85rem;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--sw-text-mute);
+    font-family: var(--sw-font-body);
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1;
 }
 
 .sw-result-count strong {
     color: var(--sw-text);
-    font-size: 1rem;
+    font-size: 0.82rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
